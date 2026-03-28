@@ -72,8 +72,9 @@ export default function DevicesScreen() {
 
       if (uid) {
         const pairings = await PairingService.getParentPairings(uid);
-        const pairedDevices: ChildDevice[] = pairings.map((pairing) => ({
+        const pairedDevices = pairings.map((pairing) => ({
           id: pairing.id,
+          childId: pairing.childId,
           name: pairing.childDeviceName || 'Child Device',
           deviceModel: 'Linked Device',
           platform: 'android',
@@ -90,7 +91,7 @@ export default function DevicesScreen() {
           },
         }));
 
-        setDevices(pairedDevices);
+        setDevices(pairedDevices as ChildDevice[]);
       } else {
         const deviceList = await DeviceManagementService.getChildDevices();
         setDevices(deviceList);
@@ -110,8 +111,15 @@ export default function DevicesScreen() {
     }, [])
   );
 
-  const handleDevicePress = (deviceId: string) => {
-    router.push(`/(parent)/devices/${deviceId}`);
+  const handleDevicePress = (device: ChildDevice & { childId?: string }) => {
+    router.push({
+      pathname: '/(parent)/devices/[id]',
+      params: {
+        id: device.id,
+        childId: device.childId || '',
+        name: device.name,
+      },
+    });
   };
 
   const handleDeviceAction = async (deviceId: string, action: string) => {
@@ -178,7 +186,7 @@ export default function DevicesScreen() {
             <TouchableOpacity
               key={device.id}
               style={styles.deviceCard}
-              onPress={() => handleDevicePress(device.id)}
+              onPress={() => handleDevicePress(device as ChildDevice & { childId?: string })}
             >
               <View style={styles.deviceInfo}>
                 <View style={styles.deviceHeader}>
