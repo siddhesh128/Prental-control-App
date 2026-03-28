@@ -40,6 +40,6 @@ module.exports = {
     experiments: {
       tsconfigPaths: true,
     },
-    newArchEnabled: false,
+    newArchEnabled: true,
   },
 };

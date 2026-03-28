@@ -1,38 +1,44 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, ScrollView, View, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
-import { Stack, useRouter } from 'expo-router';
+import {
+  StyleSheet,
+  ScrollView,
+  View,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
+import { useRouter } from 'expo-router';
 import ThemedText from '@/_components/ThemedText';
 import ThemedView from '@/_components/ThemedView';
 import { IconSymbol } from '@/_components/ui/IconSymbol';
 import Colors from '@/constants/Colors';
 import DeviceManagementService, { ChildDevice } from '@/services/device-management.service';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
+type NavigationProp = NativeStackNavigationProp<any>;
 
 export default function DevicesScreen() {
   const router = useRouter();
+  const navigation = useNavigation<NavigationProp>();
   const [devices, setDevices] = useState<ChildDevice[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const handleAddDevice = () => {
+    router.push('/(parent)/add-device');
+  };
+
   // Configure header with add button
   React.useLayoutEffect(() => {
-    router.setParams({
-      header: () => (
-        <Stack.Screen
-          options={{
-            title: 'Devices',
-            headerRight: () => (
-              <TouchableOpacity
-                onPress={handleAddDevice}
-                style={styles.headerButton}
-              >
-                <IconSymbol name="plus.circle.fill" size={24} color={Colors.light.primary} />
-              </TouchableOpacity>
-            ),
-          }}
-        />
+    navigation.setOptions({
+      title: 'Devices',
+      headerRight: () => (
+        <TouchableOpacity onPress={handleAddDevice} style={styles.headerButton}>
+          <IconSymbol name="plus.circle.fill" size={24} color={Colors.light.tint} />
+        </TouchableOpacity>
       ),
     });
-  }, [router]);
+  }, [navigation]);
 
   const loadDevices = async () => {
     try {
@@ -53,10 +59,6 @@ export default function DevicesScreen() {
       loadDevices();
     }, [])
   );
-
-  const handleAddDevice = () => {
-    router.push('/(parent)/add-device');
-  };
 
   const handleDevicePress = (deviceId: string) => {
     router.push(`/(parent)/devices/${deviceId}`);
@@ -99,35 +101,18 @@ export default function DevicesScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <Stack.Screen
-        options={{
-          title: 'Devices',
-          headerRight: () => (
-            <TouchableOpacity
-              onPress={handleAddDevice}
-              style={styles.headerButton}
-            >
-              <IconSymbol name="plus.circle.fill" size={24} color={Colors.light.primary} />
-            </TouchableOpacity>
-          ),
-        }}
-      />
-      
       {loading ? (
         <View style={styles.centerContent}>
-          <ActivityIndicator size="large" color={Colors.light.primary} />
+          <ActivityIndicator size="large" color={Colors.light.tint} />
         </View>
       ) : devices.length === 0 ? (
         <View style={styles.emptyState}>
-          <IconSymbol name="devices" size={64} color={Colors.light.primary} />
+          <IconSymbol name="devices" size={64} color={Colors.light.tint} />
           <ThemedText style={styles.emptyStateTitle}>No Devices</ThemedText>
           <ThemedText style={styles.emptyStateText}>
             Add a child device to start monitoring
           </ThemedText>
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={handleAddDevice}
-          >
+          <TouchableOpacity style={styles.addButton} onPress={handleAddDevice}>
             <IconSymbol name="plus" size={20} color="#fff" />
             <ThemedText style={styles.addButtonText}>Add Device</ThemedText>
           </TouchableOpacity>
@@ -143,10 +128,12 @@ export default function DevicesScreen() {
               <View style={styles.deviceInfo}>
                 <View style={styles.deviceHeader}>
                   <ThemedText style={styles.deviceName}>{device.name}</ThemedText>
-                  <View style={[
-                    styles.statusIndicator,
-                    { backgroundColor: device.status === 'online' ? '#4CAF50' : '#9E9E9E' }
-                  ]} />
+                  <View
+                    style={[
+                      styles.statusIndicator,
+                      { backgroundColor: device.status === 'online' ? '#4CAF50' : '#9E9E9E' },
+                    ]}
+                  />
                 </View>
                 <ThemedText style={styles.deviceModel}>{device.deviceModel}</ThemedText>
                 <View style={styles.deviceStats}>
@@ -215,7 +202,7 @@ const styles = StyleSheet.create({
   addButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.light.primary,
+    backgroundColor: Colors.light.tint,
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 24,

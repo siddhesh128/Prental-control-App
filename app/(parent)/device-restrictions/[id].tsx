@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, ScrollView, View, TouchableOpacity, Switch, Alert, ActivityIndicator } from 'react-native';
+import {
+  StyleSheet,
+  ScrollView,
+  View,
+  TouchableOpacity,
+  Switch,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import ThemedText from '@/_components/ThemedText';
 import ThemedView from '@/_components/ThemedView';
@@ -97,7 +105,7 @@ export default function DeviceRestrictionsScreen() {
   if (loading) {
     return (
       <ThemedView style={[styles.container, styles.centerContent]}>
-        <ActivityIndicator size="large" color={Colors.light.primary} />
+        <ActivityIndicator size="large" color={Colors.light.tint} />
       </ThemedView>
     );
   }
@@ -121,9 +129,11 @@ export default function DeviceRestrictionsScreen() {
         <View style={styles.deviceInfo}>
           <View style={styles.deviceIcon}>
             <IconSymbol
-              name={device.deviceModel.toLowerCase().includes('iphone') ? 'iphone' : 'phone.android'}
+              name={
+                device.deviceModel.toLowerCase().includes('iphone') ? 'iphone' : 'phone.android'
+              }
               size={24}
-              color={Colors.light.primary}
+              color={Colors.light.tint}
             />
           </View>
           <View style={styles.deviceDetails}>

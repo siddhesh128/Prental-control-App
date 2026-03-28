@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { StyleSheet, ScrollView, View, TouchableOpacity, TextInput, Alert, ActivityIndicator } from 'react-native';
+import {
+  StyleSheet,
+  ScrollView,
+  View,
+  TouchableOpacity,
+  TextInput,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import ThemedText from '@/_components/ThemedText';
 import ThemedView from '@/_components/ThemedView';
@@ -37,7 +45,7 @@ export default function AddDeviceScreen() {
       return;
     }
 
-    const selectedDevice = deviceTypes.find(type => type.id === selectedType);
+    const selectedDevice = deviceTypes.find((type) => type.id === selectedType);
     if (!selectedDevice) {
       Alert.alert('Error', 'Invalid device type selected');
       return;
@@ -105,16 +113,13 @@ export default function AddDeviceScreen() {
             {deviceTypes.map((type) => (
               <TouchableOpacity
                 key={type.id}
-                style={[
-                  styles.deviceType,
-                  selectedType === type.id && styles.selectedType,
-                ]}
+                style={[styles.deviceType, selectedType === type.id && styles.selectedType]}
                 onPress={() => setSelectedType(type.id)}
               >
                 <IconSymbol
                   name={type.icon}
                   size={32}
-                  color={selectedType === type.id ? Colors.light.primary : '#666'}
+                  color={selectedType === type.id ? Colors.light.tint : '#666'}
                 />
                 <ThemedText
                   style={[
@@ -138,7 +143,12 @@ export default function AddDeviceScreen() {
             <ActivityIndicator color="#fff" />
           ) : (
             <>
-              <IconSymbol name="plus.circle.fill" size={20} color="#fff" style={styles.addButtonIcon} />
+              <IconSymbol
+                name="plus.circle.fill"
+                size={20}
+                color="#fff"
+                style={styles.addButtonIcon}
+              />
               <ThemedText style={styles.addButtonText}>Add Device</ThemedText>
             </>
           )}
@@ -201,8 +211,8 @@ const styles = StyleSheet.create({
     borderColor: '#e0e0e0',
   },
   selectedType: {
-    borderColor: Colors.light.primary,
-    backgroundColor: Colors.light.primary + '10',
+    borderColor: Colors.light.tint,
+    backgroundColor: Colors.light.tint + '10',
   },
   deviceTypeName: {
     marginTop: 12,

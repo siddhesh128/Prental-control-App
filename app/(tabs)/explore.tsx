@@ -3,8 +3,8 @@ import { StyleSheet, Image, Platform } from 'react-native';
 import { Collapsible } from '@/_components/Collapsible';
 import { ExternalLink } from '@/_components/ExternalLink';
 import ParallaxScrollView from '@/_components/ParallaxScrollView';
-import { ThemedText } from '@/_components/ThemedText';
-import { ThemedView } from '@/_components/ThemedView';
+import ThemedText from '@/_components/ThemedText';
+import ThemedView from '@/_components/ThemedView';
 import { IconSymbol } from '@/_components/ui/IconSymbol';
 
 export default function TabTwoScreen() {
@@ -18,7 +18,8 @@ export default function TabTwoScreen() {
           name="chevron.left.forwardslash.chevron.right"
           style={styles.headerImage}
         />
-      }>
+      }
+    >
       <ThemedView style={styles.titleContainer}>
         <ThemedText type="title">Explore</ThemedText>
       </ThemedView>
@@ -49,7 +50,10 @@ export default function TabTwoScreen() {
           <ThemedText type="defaultSemiBold">@3x</ThemedText> suffixes to provide files for
           different screen densities
         </ThemedText>
-        <Image source={require('../../assets/images/react-logo.png')} style={{ alignSelf: 'center' }} />
+        <Image
+          source={require('../../assets/images/react-logo.png')}
+          style={{ alignSelf: 'center' }}
+        />
         <ExternalLink href="https://reactnative.dev/docs/images">
           <ThemedText type="link">Learn more</ThemedText>
         </ExternalLink>

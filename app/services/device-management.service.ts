@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Device as DeviceType } from '@/_types/device';
+import { Device as DeviceType } from '../../types/device';
 import * as ExpoDevice from 'expo-device';
 import * as Battery from 'expo-battery';
 import * as Location from 'expo-location';
@@ -81,16 +81,11 @@ class DeviceManagementService {
 
   async updateDeviceStatus(deviceId: string, status: 'online' | 'offline'): Promise<void> {
     const devices = await this.getChildDevices();
-    const updatedDevices = devices.map(device => 
-      device.id === deviceId 
-        ? { ...device, status, lastSeen: new Date().toISOString() }
-        : device
+    const updatedDevices = devices.map((device) =>
+      device.id === deviceId ? { ...device, status, lastSeen: new Date().toISOString() } : device
     );
 
-    await AsyncStorage.setItem(
-      this.DEVICES_STORAGE_KEY,
-      JSON.stringify(updatedDevices)
-    );
+    await AsyncStorage.setItem(this.DEVICES_STORAGE_KEY, JSON.stringify(updatedDevices));
   }
 
   async updateDeviceRestrictions(
@@ -98,7 +93,7 @@ class DeviceManagementService {
     restrictions: Partial<ChildDevice['restrictions']>
   ): Promise<void> {
     const devices = await this.getChildDevices();
-    const updatedDevices = devices.map(device =>
+    const updatedDevices = devices.map((device) =>
       device.id === deviceId
         ? {
             ...device,
@@ -107,20 +102,14 @@ class DeviceManagementService {
         : device
     );
 
-    await AsyncStorage.setItem(
-      this.DEVICES_STORAGE_KEY,
-      JSON.stringify(updatedDevices)
-    );
+    await AsyncStorage.setItem(this.DEVICES_STORAGE_KEY, JSON.stringify(updatedDevices));
   }
 
   async removeDevice(deviceId: string): Promise<void> {
     const devices = await this.getChildDevices();
-    const updatedDevices = devices.filter(device => device.id !== deviceId);
+    const updatedDevices = devices.filter((device) => device.id !== deviceId);
 
-    await AsyncStorage.setItem(
-      this.DEVICES_STORAGE_KEY,
-      JSON.stringify(updatedDevices)
-    );
+    await AsyncStorage.setItem(this.DEVICES_STORAGE_KEY, JSON.stringify(updatedDevices));
   }
 }
 

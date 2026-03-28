@@ -1,10 +1,14 @@
 import React from 'react';
 import { StyleSheet, ScrollView, View, TouchableOpacity } from 'react-native';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import ThemedText from '@/_components/ThemedText';
 import ThemedView from '@/_components/ThemedView';
 import { IconSymbol } from '@/_components/ui/IconSymbol';
 import Colors from '@/constants/Colors';
+
+type NavigationProp = NativeStackNavigationProp<any>;
 
 type DeviceStat = {
   id: string;
@@ -86,55 +90,57 @@ const monitoringControls: MonitoringControl[] = [
 
 export default function DeviceDetailsScreen() {
   const { id } = useLocalSearchParams();
-  
+  const navigation = useNavigation<NavigationProp>();
+
+  React.useLayoutEffect(() => {
+    navigation.setOptions({
+      title: "Sarah's iPhone",
+      headerLargeTitle: true,
+    });
+  }, [navigation]);
+
   const toggleControl = (controlId: string) => {
     // Implement toggle functionality
     console.log('Toggle control:', controlId);
   };
 
   return (
-    <>
-      <Stack.Screen 
-        options={{
-          title: "Sarah's iPhone",
-          headerLargeTitle: true,
-        }}
-      />
-      <ThemedView style={styles.container}>
-        <ScrollView style={styles.scrollView}>
-          <View style={styles.statsGrid}>
-            {deviceStats.map((stat) => (
-              <View key={stat.id} style={styles.statCard}>
-                <View style={[styles.iconContainer, { backgroundColor: stat.color + '20' }]}>
-                  <IconSymbol name={stat.icon} size={24} color={stat.color} />
-                </View>
-                <ThemedText style={styles.statValue}>{stat.value}</ThemedText>
-                <ThemedText style={styles.statTitle}>{stat.title}</ThemedText>
+    <ThemedView style={styles.container}>
+      <ScrollView style={styles.scrollView}>
+        <View style={styles.statsGrid}>
+          {deviceStats.map((stat) => (
+            <View key={stat.id} style={styles.statCard}>
+              <View style={[styles.iconContainer, { backgroundColor: stat.color + '20' }]}>
+                <IconSymbol name={stat.icon} size={24} color={stat.color} />
               </View>
-            ))}
-          </View>
-
-          <ThemedText type="title" style={styles.sectionTitle}>Monitoring Controls</ThemedText>
-
-          {monitoringControls.map((control) => (
-            <TouchableOpacity
-              key={control.id}
-              style={styles.controlItem}
-              onPress={() => toggleControl(control.id)}
-            >
-              <View style={styles.controlIcon}>
-                <IconSymbol name={control.icon} size={24} color={Colors.light.tint} />
-              </View>
-              <View style={styles.controlContent}>
-                <ThemedText type="defaultSemiBold">{control.title}</ThemedText>
-                <ThemedText style={styles.controlDescription}>{control.description}</ThemedText>
-              </View>
-              <View style={[styles.toggle, control.enabled && styles.toggleEnabled]} />
-            </TouchableOpacity>
+              <ThemedText style={styles.statValue}>{stat.value}</ThemedText>
+              <ThemedText style={styles.statTitle}>{stat.title}</ThemedText>
+            </View>
           ))}
-        </ScrollView>
-      </ThemedView>
-    </>
+        </View>
+
+        <ThemedText type="title" style={styles.sectionTitle}>
+          Monitoring Controls
+        </ThemedText>
+
+        {monitoringControls.map((control) => (
+          <TouchableOpacity
+            key={control.id}
+            style={styles.controlItem}
+            onPress={() => toggleControl(control.id)}
+          >
+            <View style={styles.controlIcon}>
+              <IconSymbol name={control.icon} size={24} color={Colors.light.tint} />
+            </View>
+            <View style={styles.controlContent}>
+              <ThemedText type="defaultSemiBold">{control.title}</ThemedText>
+              <ThemedText style={styles.controlDescription}>{control.description}</ThemedText>
+            </View>
+            <View style={[styles.toggle, control.enabled && styles.toggleEnabled]} />
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </ThemedView>
   );
 }
 

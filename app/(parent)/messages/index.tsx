@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, ScrollView, View, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import {
+  StyleSheet,
+  ScrollView,
+  View,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
 import { Stack } from 'expo-router';
 import ThemedText from '@/_components/ThemedText';
 import ThemedView from '@/_components/ThemedView';
@@ -75,16 +82,19 @@ export default function MessagesScreen() {
       setLoading(true);
       // Load devices to map device IDs to names
       const deviceList = await DeviceManagementService.getChildDevices();
-      const deviceMap = deviceList.reduce((acc, device) => {
-        acc[device.id] = device.name;
-        return acc;
-      }, {} as Record<string, string>);
+      const deviceMap = deviceList.reduce(
+        (acc, device) => {
+          acc[device.id] = device.name;
+          return acc;
+        },
+        {} as Record<string, string>
+      );
       setDevices(deviceMap);
 
       // In a real implementation, we would load actual messages here
       // const msgs = await MessagesService.getMessages();
       // setMessages(msgs);
-      
+
       // Using mock data for now
       setMessages(mockMessages);
     } catch (error) {
@@ -97,18 +107,15 @@ export default function MessagesScreen() {
 
   const handleToggleBlocked = async (messageId: string) => {
     try {
-      const updatedMessages = messages.map(msg =>
+      const updatedMessages = messages.map((msg) =>
         msg.id === messageId ? { ...msg, isBlocked: !msg.isBlocked } : msg
       );
       setMessages(updatedMessages);
-      
+
       // In a real implementation, we would update the server here
       // await MessagesService.toggleMessageBlocked(messageId);
-      
-      Alert.alert(
-        'Success',
-        'Message status updated successfully'
-      );
+
+      Alert.alert('Success', 'Message status updated successfully');
     } catch (error) {
       console.error('Error toggling message blocked status:', error);
       Alert.alert('Error', 'Failed to update message status');
@@ -118,11 +125,11 @@ export default function MessagesScreen() {
   const getFilteredMessages = () => {
     switch (filter) {
       case 'sent':
-        return messages.filter(msg => msg.type === 'sent');
+        return messages.filter((msg) => msg.type === 'sent');
       case 'received':
-        return messages.filter(msg => msg.type === 'received');
+        return messages.filter((msg) => msg.type === 'received');
       case 'blocked':
-        return messages.filter(msg => msg.isBlocked);
+        return messages.filter((msg) => msg.isBlocked);
       default:
         return messages;
     }
@@ -131,7 +138,7 @@ export default function MessagesScreen() {
   if (loading) {
     return (
       <ThemedView style={[styles.container, styles.centerContent]}>
-        <ActivityIndicator size="large" color={Colors.light.primary} />
+        <ActivityIndicator size="large" color={Colors.light.tint} />
       </ThemedView>
     );
   }
@@ -157,10 +164,7 @@ export default function MessagesScreen() {
             onPress={() => setFilter(type)}
           >
             <ThemedText
-              style={[
-                styles.filterButtonText,
-                filter === type && styles.filterButtonTextActive,
-              ]}
+              style={[styles.filterButtonText, filter === type && styles.filterButtonTextActive]}
             >
               {type.charAt(0).toUpperCase() + type.slice(1)}
             </ThemedText>
@@ -171,7 +175,7 @@ export default function MessagesScreen() {
       <ScrollView style={styles.content}>
         {filteredMessages.length === 0 ? (
           <View style={styles.emptyState}>
-            <IconSymbol name="message" size={64} color={Colors.light.primary} />
+            <IconSymbol name="message" size={64} color={Colors.light.tint} />
             <ThemedText style={styles.emptyStateTitle}>No Messages</ThemedText>
             <ThemedText style={styles.emptyStateText}>
               There are no messages matching your filter
@@ -185,27 +189,19 @@ export default function MessagesScreen() {
                   <ThemedText style={styles.contactName}>
                     {message.contact.name || 'Unknown'}
                   </ThemedText>
-                  <ThemedText style={styles.contactNumber}>
-                    {message.contact.number}
-                  </ThemedText>
+                  <ThemedText style={styles.contactNumber}>{message.contact.number}</ThemedText>
                 </View>
                 <TouchableOpacity
-                  style={[
-                    styles.blockButton,
-                    message.isBlocked && styles.unblockButton,
-                  ]}
+                  style={[styles.blockButton, message.isBlocked && styles.unblockButton]}
                   onPress={() => handleToggleBlocked(message.id)}
                 >
                   <IconSymbol
                     name={message.isBlocked ? 'shield.slash' : 'shield'}
                     size={16}
-                    color={message.isBlocked ? '#ff3b30' : Colors.light.primary}
+                    color={message.isBlocked ? '#ff3b30' : Colors.light.tint}
                   />
                   <ThemedText
-                    style={[
-                      styles.blockButtonText,
-                      message.isBlocked && styles.unblockButtonText,
-                    ]}
+                    style={[styles.blockButtonText, message.isBlocked && styles.unblockButtonText]}
                   >
                     {message.isBlocked ? 'Unblock' : 'Block'}
                   </ThemedText>
@@ -216,17 +212,13 @@ export default function MessagesScreen() {
                 <View
                   style={[
                     styles.messageBubble,
-                    message.type === 'sent'
-                      ? styles.sentBubble
-                      : styles.receivedBubble,
+                    message.type === 'sent' ? styles.sentBubble : styles.receivedBubble,
                   ]}
                 >
                   <ThemedText
                     style={[
                       styles.messageText,
-                      message.type === 'sent'
-                        ? styles.sentText
-                        : styles.receivedText,
+                      message.type === 'sent' ? styles.sentText : styles.receivedText,
                     ]}
                   >
                     {message.content}

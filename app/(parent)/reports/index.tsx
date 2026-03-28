@@ -1,11 +1,23 @@
 import React, { useState } from 'react';
-import { StyleSheet, ScrollView, View, TouchableOpacity, Alert, Share, ActivityIndicator } from 'react-native';
-import { Stack, useRouter } from 'expo-router';
+import {
+  StyleSheet,
+  ScrollView,
+  View,
+  TouchableOpacity,
+  Alert,
+  Share,
+  ActivityIndicator,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import ThemedText from '@/_components/ThemedText';
 import ThemedView from '@/_components/ThemedView';
 import { IconSymbol } from '@/_components/ui/IconSymbol';
 import Colors from '@/constants/Colors';
 import DeviceMonitoringService from '@/services/device-monitoring.service';
+
+type NavigationProp = NativeStackNavigationProp<any>;
 
 type ReportType = {
   id: string;
@@ -61,16 +73,26 @@ function formatBytes(bytes: number): string {
 
 export default function ReportsScreen() {
   const router = useRouter();
+  const navigation = useNavigation<NavigationProp>();
   const [generating, setGenerating] = useState<string | null>(null);
+
+  React.useLayoutEffect(() => {
+    navigation.setOptions({
+      title: 'Reports',
+      headerTitleStyle: {
+        fontWeight: 'bold',
+      },
+    });
+  }, [navigation]);
 
   const handleReportPress = async (report: ReportType) => {
     try {
       setGenerating(report.id);
       const reportData = await DeviceMonitoringService.generateReport(report.type);
-      
+
       // Format report data as text
       const reportText = formatReportData(report.type, reportData);
-      
+
       // Share report
       await Share.share({
         title: `${report.title} - ThunderControl`,
@@ -101,13 +123,13 @@ export default function ReportsScreen() {
         report += `Current Location:\n`;
         report += `- Latitude: ${data.currentLocation.latitude}\n`;
         report += `- Longitude: ${data.currentLocation.longitude}\n\n`;
-        
+
         report += `Location History (Last ${data.locationHistory.length} locations):\n`;
         data.locationHistory.forEach((loc: any, index: number) => {
           report += `${index + 1}. ${loc.address || 'Unknown Location'}\n`;
           report += `   Time: ${new Date(loc.timestamp).toLocaleString()}\n`;
         });
-        
+
         report += `\nSafe Zones (${data.safeZones.length}):\n`;
         data.safeZones.forEach((zone: any) => {
           report += `- ${zone.name} (Radius: ${zone.radius}m)\n`;
@@ -144,14 +166,6 @@ export default function ReportsScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <Stack.Screen
-        options={{
-          title: 'Reports',
-          headerTitleStyle: {
-            fontWeight: 'bold',
-          },
-        }}
-      />
       <ScrollView style={styles.content}>
         <View style={styles.header}>
           <ThemedText style={styles.title}>Device Reports</ThemedText>
@@ -169,11 +183,7 @@ export default function ReportsScreen() {
               disabled={generating !== null}
             >
               <View style={[styles.iconContainer, { backgroundColor: report.color + '20' }]}>
-                <IconSymbol
-                  name={report.icon}
-                  size={32}
-                  color={report.color}
-                />
+                <IconSymbol name={report.icon} size={32} color={report.color} />
               </View>
               <ThemedText style={styles.cardTitle}>{report.title}</ThemedText>
               <ThemedText style={styles.cardDescription}>{report.description}</ThemedText>

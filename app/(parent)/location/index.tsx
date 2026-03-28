@@ -19,7 +19,7 @@ export default function LocationTrackingScreen() {
     try {
       setLoading(true);
       const deviceList = await DeviceManagementService.getChildDevices();
-      setDevices(deviceList.filter(device => device.location));
+      setDevices(deviceList.filter((device) => device.location));
     } catch (error) {
       console.error('Error loading devices:', error);
     } finally {
@@ -30,7 +30,7 @@ export default function LocationTrackingScreen() {
   if (loading) {
     return (
       <ThemedView style={[styles.container, styles.centerContent]}>
-        <ActivityIndicator size="large" color={Colors.light.primary} />
+        <ActivityIndicator size="large" color={Colors.light.tint} />
       </ThemedView>
     );
   }
@@ -65,19 +65,20 @@ export default function LocationTrackingScreen() {
               longitudeDelta: 0.0421,
             }}
           >
-            {devices.map((device) => (
-              device.location && (
-                <Marker
-                  key={device.id}
-                  coordinate={{
-                    latitude: device.location.latitude,
-                    longitude: device.location.longitude,
-                  }}
-                  title={device.name}
-                  description={`Last updated: ${new Date(device.location.timestamp).toLocaleString()}`}
-                />
-              )
-            ))}
+            {devices.map(
+              (device) =>
+                device.location && (
+                  <Marker
+                    key={device.id}
+                    coordinate={{
+                      latitude: device.location.latitude,
+                      longitude: device.location.longitude,
+                    }}
+                    title={device.name}
+                    description={`Last updated: ${new Date(device.location.timestamp).toLocaleString()}`}
+                  />
+                )
+            )}
           </MapView>
         </View>
       )}

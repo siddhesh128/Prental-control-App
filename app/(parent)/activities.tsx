@@ -1,10 +1,13 @@
 import React from 'react';
 import { StyleSheet, ScrollView, View, TouchableOpacity } from 'react-native';
-import { Stack } from 'expo-router';
-import { ThemedText } from '../components/ThemedText';
-import { ThemedView } from '../components/ThemedView';
-import { IconSymbol } from '../components/ui/IconSymbol';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import ThemedText from '../_components/ThemedText';
+import ThemedView from '../_components/ThemedView';
+import { IconSymbol } from '../_components/ui/IconSymbol';
 import Colors from '../constants/Colors';
+
+type NavigationProp = NativeStackNavigationProp<any>;
 
 type Activity = {
   id: string;
@@ -12,7 +15,7 @@ type Activity = {
   title: string;
   description: string;
   timestamp: string;
-  icon: string;
+  icon: 'play.circle.fill' | 'safari.fill' | 'location.fill' | 'timer';
 };
 
 const recentActivities: Activity[] = [
@@ -51,41 +54,38 @@ const recentActivities: Activity[] = [
 ];
 
 export default function ActivitiesScreen() {
+  const navigation = useNavigation<NavigationProp>();
+
+  React.useLayoutEffect(() => {
+    navigation.setOptions({
+      title: 'Recent Activities',
+      headerLargeTitle: true,
+    });
+  }, [navigation]);
+
   return (
-    <>
-      <Stack.Screen 
-        options={{
-          title: 'Recent Activities',
-          headerLargeTitle: true,
-        }}
-      />
-      <ThemedView style={styles.container}>
-        <ScrollView style={styles.scrollView}>
-          {recentActivities.map((activity) => (
-            <TouchableOpacity key={activity.id} style={styles.activityItem}>
-              <View style={styles.iconContainer}>
-                <IconSymbol 
-                  name={activity.icon} 
-                  size={24} 
-                  color={Colors.light.tint}
-                />
-              </View>
-              <View style={styles.activityContent}>
-                <ThemedText type="defaultSemiBold">{activity.title}</ThemedText>
-                <ThemedText style={styles.description}>{activity.description}</ThemedText>
-                <ThemedText style={styles.timestamp}>{activity.timestamp}</ThemedText>
-              </View>
-              <IconSymbol 
-                name="chevron.right" 
-                size={20} 
-                color={Colors.light.text} 
-                style={styles.chevron}
-              />
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </ThemedView>
-    </>
+    <ThemedView style={styles.container}>
+      <ScrollView style={styles.scrollView}>
+        {recentActivities.map((activity) => (
+          <TouchableOpacity key={activity.id} style={styles.activityItem}>
+            <View style={styles.iconContainer}>
+              <IconSymbol name={activity.icon} size={24} color={Colors.light.tint} />
+            </View>
+            <View style={styles.activityContent}>
+              <ThemedText type="defaultSemiBold">{activity.title}</ThemedText>
+              <ThemedText style={styles.description}>{activity.description}</ThemedText>
+              <ThemedText style={styles.timestamp}>{activity.timestamp}</ThemedText>
+            </View>
+            <IconSymbol
+              name="chevron.right"
+              size={20}
+              color={Colors.light.text}
+              style={styles.chevron}
+            />
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </ThemedView>
   );
 }
 

@@ -8,7 +8,7 @@ import { updateLinkedDevices } from '../../store/slices/deviceSlice';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ParentStackParamList } from '../../navigation/types';
 import { AuthService } from '../../services/auth.service';
-import { GuestConversionModal } from '../../components/GuestConversionModal';
+import { GuestConversionModal } from '../../_components/GuestConversionModal';
 
 type Props = {
   navigation: NativeStackNavigationProp<ParentStackParamList, 'Dashboard'>;
@@ -34,21 +34,23 @@ const ParentDashboardScreen = ({ navigation }: Props) => {
 
   const fetchDeviceSummaries = async () => {
     if (!user) return;
-    
+
     try {
       const summaries: DeviceSummary[] = [];
       for (const deviceId of linkedDevices) {
         const deviceStats = await MonitoringService.getDeviceStats(deviceId, 1);
         const deviceInfo = deviceStats.deviceInfo;
-        
+
         summaries.push({
           deviceId,
           deviceName: deviceInfo.deviceName,
           lastSeen: new Date(deviceInfo.lastUpdated).toLocaleString(),
           batteryLevel: deviceInfo.batteryLevel,
           isOnline: deviceInfo.isOnline,
-          screenTimeToday: Object.values(deviceStats.screenTime || {})
-            .reduce((total: number, app: any) => total + app.duration, 0),
+          screenTimeToday: Object.values(deviceStats.screenTime || {}).reduce(
+            (total: number, app: any) => total + app.duration,
+            0
+          ),
         });
       }
       setDeviceSummaries(summaries);
@@ -89,14 +91,10 @@ const ParentDashboardScreen = ({ navigation }: Props) => {
   return (
     <ScrollView
       style={styles.container}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
       {isGuest && (
-        <Card 
-          containerStyle={styles.guestBanner}
-        >
+        <Card containerStyle={styles.guestBanner}>
           <View style={styles.guestBannerContent}>
             <Icon
               name="info"
@@ -106,9 +104,7 @@ const ParentDashboardScreen = ({ navigation }: Props) => {
               containerStyle={styles.guestBannerIcon}
             />
             <View style={styles.guestBannerText}>
-              <Text style={styles.guestBannerTitle}>
-                You're using a guest account
-              </Text>
+              <Text style={styles.guestBannerTitle}>You're using a guest account</Text>
               <Text style={styles.guestBannerSubtitle}>
                 Create a full account to access all features and save your data
               </Text>
@@ -146,9 +142,7 @@ const ParentDashboardScreen = ({ navigation }: Props) => {
             />
             <ListItem.Content>
               <ListItem.Title>{device.deviceName}</ListItem.Title>
-              <ListItem.Subtitle>
-                Last seen: {device.lastSeen}
-              </ListItem.Subtitle>
+              <ListItem.Subtitle>Last seen: {device.lastSeen}</ListItem.Subtitle>
             </ListItem.Content>
             <View style={styles.deviceActions}>
               <Icon
@@ -168,9 +162,7 @@ const ParentDashboardScreen = ({ navigation }: Props) => {
                 containerStyle={styles.actionIcon}
               />
               <View style={styles.deviceStats}>
-                <Text style={styles.batteryText}>
-                  {Math.round(device.batteryLevel * 100)}%
-                </Text>
+                <Text style={styles.batteryText}>{Math.round(device.batteryLevel * 100)}%</Text>
                 <Text style={styles.screenTimeText}>
                   {Math.round(device.screenTimeToday / (60 * 1000))} min today
                 </Text>

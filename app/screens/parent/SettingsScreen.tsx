@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { AuthService } from '../../services/auth.service';
 import { setUser } from '../../store/slices/authSlice';
 import { RootState } from '../../store';
-import { GuestConversionModal } from '../../components/GuestConversionModal';
+import { GuestConversionModal } from '../../_components/GuestConversionModal';
 
 const SettingsScreen: React.FC = () => {
   const [showConversionModal, setShowConversionModal] = useState(false);
@@ -48,16 +48,10 @@ const SettingsScreen: React.FC = () => {
           <Icon name="account-circle" type="material" />
           <ListItem.Content>
             <ListItem.Title>Account Type</ListItem.Title>
-            <ListItem.Subtitle>
-              {isGuest ? 'Guest Account' : 'Full Account'}
-            </ListItem.Subtitle>
+            <ListItem.Subtitle>{isGuest ? 'Guest Account' : 'Full Account'}</ListItem.Subtitle>
           </ListItem.Content>
           {isGuest && (
-            <Button
-              title="Upgrade"
-              type="outline"
-              onPress={() => setShowConversionModal(true)}
-            />
+            <Button title="Upgrade" type="outline" onPress={() => setShowConversionModal(true)} />
           )}
         </ListItem>
 
@@ -124,9 +118,7 @@ const SettingsScreen: React.FC = () => {
             size={20}
             containerStyle={styles.warningIcon}
           />
-          <Text style={styles.warningText}>
-            Guest account data will be lost after signing out
-          </Text>
+          <Text style={styles.warningText}>Guest account data will be lost after signing out</Text>
         </View>
       )}
 

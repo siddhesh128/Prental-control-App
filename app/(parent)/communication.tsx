@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
-import { ThemedView } from '../components/ThemedView';
-import { ThemedText } from '../components/ThemedText';
+import ThemedView from '../_components/ThemedView';
+import ThemedText from '../_components/ThemedText';
 
 export default function CommunicationScreen() {
   return (
