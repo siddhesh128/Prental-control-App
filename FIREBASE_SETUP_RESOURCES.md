@@ -153,7 +153,7 @@ These files are already created and ready to use:
 ## 🗂️ File Organization
 
 ```
-ThunderControl-master/
+ParentalControl-master/
 ├── 📄 FIREBASE_SETUP_VISUAL_GUIDE.md    ⭐ START HERE
 │                                        (Step-by-step guide)
 │

@@ -5,7 +5,7 @@
 ### Phase 1: Cloud Console (5 min)
 
 - [ ] Go to https://console.firebase.google.com
-- [ ] Click **"Add project"** → Enter **"ThunderControl"**
+- [ ] Click **"Add project"** → Enter **"Parental Control"**
 - [ ] Wait for project to create
 - [ ] In **Authentication** → Enable **Email/Password**
 - [ ] In **Firestore** → Click **Create database** → test mode
@@ -87,7 +87,7 @@ Test in app:
 ### Step 1: Create Firebase Project
 
 - [ ] Visit https://console.firebase.google.com
-- [ ] Create new project named "ThunderControl"
+- [ ] Create new project named "Parental Control"
 - [ ] Choose region near you
 - [ ] Project created ✓
 

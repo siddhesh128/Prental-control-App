@@ -149,7 +149,7 @@ npx expo start
 ### **In Your Project Root:**
 
 ```
-ThunderControl-master/
+ParentalControl-master/
 ├── FIREBASE_SETUP_VISUAL_GUIDE.md      ⭐ START HERE
 ├── FIREBASE_SETUP_COMPLETE.md          (Detailed)
 ├── FIREBASE_SETUP_CHECKLIST.md         (Progress tracker)

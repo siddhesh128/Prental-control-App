@@ -4,7 +4,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                    FIREBASE SETUP FOR THUNDERCONTROL                │
+│                    FIREBASE SETUP FOR PARENTAL CONTROL              │
 └─────────────────────────────────────────────────────────────────────┘
 
                             ┌──────────────┐
@@ -301,7 +301,7 @@ Time    Activity                    Duration
 ## File Structure After Setup
 
 ```
-ThunderControl-master/
+ParentalControl-master/
 ├── .env.local                    ⬅️ YOUR VALUES HERE
 ├── .firebaserc                   ✓ Already created
 ├── firebase.json                 ✓ Already created

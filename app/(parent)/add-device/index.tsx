@@ -163,7 +163,7 @@ export default function AddDeviceScreen() {
 Notes:
 • Each QR code expires after 5 minutes
 • You can regenerate a new code if needed
-• Make sure the child device has ThunderControl installed`
+• Make sure the child device has Parental Control installed`
     );
   };
 

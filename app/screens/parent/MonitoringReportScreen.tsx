@@ -34,11 +34,11 @@ const MonitoringReportScreen: React.FC = () => {
     try {
       const devicesRef = ref(database, `users/${userId}/devices`);
       const snapshot = await get(devicesRef);
-      
+
       if (snapshot.exists()) {
         const devices = snapshot.val();
         const monitoringData: MonitoringData[] = [];
-        
+
         for (const [deviceId, device] of Object.entries(devices)) {
           const deviceData = device as any;
           monitoringData.push({
@@ -50,7 +50,7 @@ const MonitoringReportScreen: React.FC = () => {
             location: deviceData.location || undefined,
           });
         }
-        
+
         setReportData(monitoringData);
       }
     } catch (error) {
@@ -62,19 +62,19 @@ const MonitoringReportScreen: React.FC = () => {
 
   const generateReport = () => {
     const timestamp = new Date().toISOString().split('T')[0];
-    let reportContent = `ThunderControl Monitoring Report - ${timestamp}\n\n`;
+    let reportContent = `Parental Control Monitoring Report - ${timestamp}\n\n`;
 
     reportData.forEach((device) => {
       reportContent += `Device: ${device.deviceName} (${device.deviceId})\n`;
       reportContent += `Screen Time: ${Math.round(device.screenTime / 60)} minutes\n`;
       reportContent += `Battery Level: ${device.batteryLevel}%\n`;
       reportContent += `Last Seen: ${device.lastSeen}\n`;
-      
+
       if (device.location) {
         reportContent += `Location: ${device.location.latitude}, ${device.location.longitude}\n`;
         reportContent += `Location Time: ${device.location.timestamp}\n`;
       }
-      
+
       reportContent += '\n---\n\n';
     });
 
@@ -99,7 +99,7 @@ const MonitoringReportScreen: React.FC = () => {
         // Mobile export
         const filePath = `${FileSystem.documentDirectory}${fileName}`;
         await FileSystem.writeAsStringAsync(filePath, report);
-        
+
         if (Platform.OS === 'ios') {
           await Sharing.shareAsync(filePath);
         } else {
@@ -124,9 +124,7 @@ const MonitoringReportScreen: React.FC = () => {
     <ScrollView style={styles.container}>
       <Card containerStyle={styles.headerCard}>
         <Text style={styles.headerTitle}>Monitoring Report</Text>
-        <Text style={styles.headerSubtitle}>
-          View and export device monitoring data
-        </Text>
+        <Text style={styles.headerSubtitle}>View and export device monitoring data</Text>
         <Button
           title="Export Report"
           icon={
@@ -157,24 +155,14 @@ const MonitoringReportScreen: React.FC = () => {
             <Text style={styles.deviceName}>{device.deviceName}</Text>
             <View style={styles.statRow}>
               <View style={styles.stat}>
-                <Icon
-                  name="screen-smartphone"
-                  type="simple-line-icon"
-                  size={20}
-                  color="#007AFF"
-                />
+                <Icon name="screen-smartphone" type="simple-line-icon" size={20} color="#007AFF" />
                 <Text style={styles.statLabel}>Screen Time</Text>
                 <Text style={styles.statValue}>
                   {formatDuration(Math.round(device.screenTime / 60))}
                 </Text>
               </View>
               <View style={styles.stat}>
-                <Icon
-                  name="battery"
-                  type="font-awesome"
-                  size={20}
-                  color="#007AFF"
-                />
+                <Icon name="battery" type="font-awesome" size={20} color="#007AFF" />
                 <Text style={styles.statLabel}>Battery</Text>
                 <Text style={styles.statValue}>{device.batteryLevel}%</Text>
               </View>

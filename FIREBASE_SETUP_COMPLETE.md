@@ -1,8 +1,8 @@
-# Complete Firebase Setup Guide for ThunderControl
+# Complete Firebase Setup Guide for Parental Control
 
 ## Overview
 
-This guide walks you through setting up Firebase from scratch for the ThunderControl app. You'll configure authentication, Firestore/Realtime Database, Cloud Functions, and the emulator.
+This guide walks you through setting up Firebase from scratch for the Parental Control app. You'll configure authentication, Firestore/Realtime Database, Cloud Functions, and the emulator.
 
 **Estimated Time**: 20-30 minutes
 
@@ -12,7 +12,7 @@ This guide walks you through setting up Firebase from scratch for the ThunderCon
 
 1. Visit https://console.firebase.google.com
 2. Click **"Add project"** button
-3. Enter project name: `ThunderControl` (or your choice)
+3. Enter project name: `Parental Control` (or your choice)
 4. Choose region: Select closest to your location
 5. Click **"Create project"**
 
@@ -177,13 +177,13 @@ EXPO_PUBLIC_FIREBASE_DATABASE_URL=https://YOUR_PROJECT_ID.firebaseio.com
 
 ```env
 EXPO_PUBLIC_FIREBASE_API_KEY=AIzaSyDl5v_qQ8z7RxT9pKmL3OvW1YuZ4xAb5Cd
-EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=thundercontrol-p1a2b.firebaseapp.com
-EXPO_PUBLIC_FIREBASE_PROJECT_ID=thundercontrol-p1a2b
-EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=thundercontrol-p1a2b.appspot.com
+EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=parental-control-p1a2b.firebaseapp.com
+EXPO_PUBLIC_FIREBASE_PROJECT_ID=parental-control-p1a2b
+EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=parental-control-p1a2b.appspot.com
 EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=123456789012
 EXPO_PUBLIC_FIREBASE_APP_ID=1:123456789012:web:abcd1234efgh5678ijkl
 EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID=G-ABC123DEFG
-EXPO_PUBLIC_FIREBASE_DATABASE_URL=https://thundercontrol-p1a2b.firebaseio.com
+EXPO_PUBLIC_FIREBASE_DATABASE_URL=https://parental-control-p1a2b.firebaseio.com
 ```
 
 ### Step 5.2: Create `.env` file (for Cloud Functions)
@@ -634,7 +634,7 @@ firebase functions:delete confirmDevicePairing
 
 - **Firestore**: Better querying, more scalable (use this)
 - **Realtime Database**: Simpler, faster real-time sync (legacy)
-- ThunderControl uses Firestore primarily
+- Parental Control uses Firestore primarily
 
 ### Emulator
 

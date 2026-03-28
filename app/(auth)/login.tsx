@@ -62,7 +62,7 @@ function LoginScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.formContainer}>
-        <Text style={styles.title}>Welcome to ThunderControl</Text>
+        <Text style={styles.title}>Welcome to Parental Control</Text>
         <View style={styles.roleToggle}>
           <TouchableOpacity
             style={[styles.roleOption, isParentMode && styles.roleOptionActive]}

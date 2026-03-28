@@ -1,6 +1,6 @@
 {
-  "name": "thundercontrol-functions",
-  "description": "Cloud Functions for ThunderControl",
+  "name": "parental-control-functions",
+  "description": "Cloud Functions for Parental Control",
   "type": "module",
   "engines": {
     "node": "20"

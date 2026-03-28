@@ -37,7 +37,7 @@ const LocationTrackingScreen = () => {
           PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
           {
             title: 'Location Permission',
-            message: 'ThunderControl needs access to your location',
+            message: 'Parental Control needs access to your location',
             buttonNeutral: 'Ask Me Later',
             buttonNegative: 'Cancel',
             buttonPositive: 'OK',
@@ -82,7 +82,8 @@ const LocationTrackingScreen = () => {
           longitude: location.longitude,
           latitudeDelta: 0.0922,
           longitudeDelta: 0.0421,
-        }}>
+        }}
+      >
         <Marker
           coordinate={{
             latitude: location.latitude,

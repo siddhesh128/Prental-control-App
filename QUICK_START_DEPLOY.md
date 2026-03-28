@@ -1,4 +1,4 @@
-# Quick Start: Deploy ThunderControl Backend
+# Quick Start: Deploy Parental Control Backend
 
 ## Pre-Deployment Checklist
 

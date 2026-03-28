@@ -1,10 +1,11 @@
-# ThunderControl - Parental Control & Monitoring App
+# Parental Control - Monitoring App
 
-ThunderControl is a comprehensive mobile application built with React Native and Expo that helps parents monitor and manage their children's device usage. The app provides real-time monitoring, usage controls, and detailed activity reports.
+Parental Control is a comprehensive mobile application built with React Native and Expo that helps parents monitor and manage their children's device usage. The app provides real-time monitoring, usage controls, and detailed activity reports.
 
 ## 🚀 Features
 
 ### Authentication & User Management
+
 - Multi-role support (Parent/Child)
 - Email & Password authentication
 - Google Sign-in integration
@@ -15,6 +16,7 @@ ThunderControl is a comprehensive mobile application built with React Native and
 - Password reset functionality
 
 ### Parent Features
+
 - Real-time device monitoring
 - App usage statistics
 - Screen time management
@@ -31,6 +33,7 @@ ThunderControl is a comprehensive mobile application built with React Native and
   - Safety Reports (alerts, blocked content)
 
 ### Child Features
+
 - Simplified dashboard
 - Time remaining indicators
 - Emergency contact options
@@ -38,6 +41,7 @@ ThunderControl is a comprehensive mobile application built with React Native and
 - Educational content access
 
 ## 🎨 UI/UX Features
+
 - Dynamic theme system with light/dark mode support
 - Responsive layouts for all screen sizes
 - Smooth animations and transitions
@@ -52,6 +56,7 @@ ThunderControl is a comprehensive mobile application built with React Native and
 ## 🛠 Technology Stack
 
 ### Frontend
+
 - React Native (with Expo SDK 52)
 - TypeScript
 - Expo Router v4 (for navigation)
@@ -64,6 +69,7 @@ ThunderControl is a comprehensive mobile application built with React Native and
 - Expo FileSystem
 
 ### Backend & Services
+
 - Firebase Authentication
 - Firebase Realtime Database
 - Firebase Cloud Functions
@@ -71,6 +77,7 @@ ThunderControl is a comprehensive mobile application built with React Native and
 - AsyncStorage for local data
 
 ### Development Tools
+
 - Expo CLI
 - TypeScript
 - ESLint
@@ -79,6 +86,7 @@ ThunderControl is a comprehensive mobile application built with React Native and
 ## 📋 Prerequisites
 
 Before you begin, ensure you have the following installed:
+
 - Node.js (v23.2.0 or later)
 - npm or yarn
 - Expo CLI (`npm install -g expo-cli`)
@@ -87,12 +95,14 @@ Before you begin, ensure you have the following installed:
 ## 🔧 Setup & Installation
 
 1. **Clone the repository**
+
    ```bash
-   git clone https://github.com/yourusername/thundercontrol.git
-   cd thundercontrol
+   git clone https://github.com/yourusername/parental-control.git
+   cd parental-control
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    # or
@@ -120,7 +130,7 @@ Before you begin, ensure you have the following installed:
    - Add your app to Firebase project
 
 5. **Google Sign-in Configuration**
-   
+
    a. **Download Configuration Files**
    - Download `GoogleService-Info.plist` for iOS from Firebase Console
    - Download `google-services.json` for Android from Firebase Console
@@ -132,6 +142,7 @@ Before you begin, ensure you have the following installed:
 ## Google OAuth Setup
 
 ### Prerequisites
+
 - A Google Cloud Console account
 - Access to the [Google Cloud Console](https://console.cloud.google.com/)
 - Your app's bundle identifier and package name
@@ -150,7 +161,7 @@ Before you begin, ensure you have the following installed:
    - Navigate to "APIs & Services" > "OAuth consent screen"
    - Choose "External" user type
    - Fill in required information:
-     - App name: "ThunderControl"
+   - App name: "Parental Control"
      - User support email
      - Developer contact email
    - Add required scopes:
@@ -159,12 +170,12 @@ Before you begin, ensure you have the following installed:
      - openid
 
 3. **Create OAuth Client IDs**
-   
+
    a. **iOS Client ID**:
    - Go to "APIs & Services" > "Credentials"
    - Click "Create Credentials" > "OAuth client ID"
    - Choose "iOS" application type
-   - Enter your app's bundle ID (e.g., "com.yourcompany.thundercontrol")
+   - Enter your app's bundle ID (e.g., "com.yourcompany.parentalcontrol")
    - Save the client ID
 
    b. **Android Client ID**:
@@ -185,6 +196,7 @@ Before you begin, ensure you have the following installed:
 
 4. **Configure Environment Variables**
    Add the following to your `.env` file:
+
    ```shell
    GOOGLE_WEB_CLIENT_ID=your-web-client-id.apps.googleusercontent.com
    GOOGLE_IOS_CLIENT_ID=your-ios-client-id.apps.googleusercontent.com
@@ -198,6 +210,7 @@ Before you begin, ensure you have the following installed:
 
 6. **Update app.config.js**
    Ensure your app.config.js has the correct configuration:
+
    ```javascript
    ios: {
      bundleIdentifier: "your.bundle.id",
@@ -215,10 +228,11 @@ Before you begin, ensure you have the following installed:
    ```
 
 7. **Rebuild the Project**
+
    ```bash
    # Clean and rebuild
    npx expo prebuild --clean
-   
+
    # For iOS, install pods
    cd ios && pod install && cd ..
    ```
@@ -226,6 +240,7 @@ Before you begin, ensure you have the following installed:
 ### Troubleshooting
 
 - If you encounter UTF-8 encoding issues with CocoaPods, add to your `~/.profile` or `~/.zshrc`:
+
   ```bash
   export LANG=en_US.UTF-8
   ```
@@ -240,6 +255,7 @@ Before you begin, ensure you have the following installed:
 ### Current Configuration
 
 The app is configured with the following client IDs:
+
 - Web Client ID: `109575996570-ffc2eu64vq9mgvkafdkk2fk2mk120ik9.apps.googleusercontent.com`
 - iOS Client ID: `109575996570-c5qu55mvdq3vl92g74flpbdb3v074uno.apps.googleusercontent.com`
 - Android Client ID: `109575996570-nsnbem845klp5ahqnd8ae84br4jt94d2.apps.googleusercontent.com`
@@ -247,11 +263,13 @@ The app is configured with the following client IDs:
 ## 📱 Running the App
 
 1. **Start the development server**
+
    ```bash
    npx expo start
    ```
 
 2. **Run on iOS Simulator**
+
    ```bash
    npx expo run:ios
    ```
@@ -264,7 +282,7 @@ The app is configured with the following client IDs:
 ## 📁 Project Structure
 
 ```
-thundercontrol/
+parental-control/
 ├── app/                    # Main application code
 │   ├── (auth)/            # Authentication routes
 │   ├── (parent)/          # Parent dashboard routes

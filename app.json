@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "ThunderControl",
-    "slug": "ThunderControl",
+    "name": "Parental Control",
+    "slug": "parental-control",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -11,12 +11,9 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "ThunderControl needs access to location to monitor device location.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "ThunderControl needs access to location to monitor device location in the background.",
-        "UIBackgroundModes": [
-          "location",
-          "fetch"
-        ]
+        "NSLocationWhenInUseUsageDescription": "Parental Control needs access to location to monitor device location.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Parental Control needs access to location to monitor device location in the background.",
+        "UIBackgroundModes": ["location", "fetch"]
       }
     },
     "android": {

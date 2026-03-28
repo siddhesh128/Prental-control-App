@@ -1,7 +1,7 @@
 module.exports = {
   expo: {
-    name: 'ThunderControl',
-    slug: 'thunder-control',
+    name: 'Parental Control',
+    slug: 'parental-control',
     version: '1.0.0',
     orientation: 'portrait',
     userInterfaceStyle: 'light',
@@ -22,7 +22,7 @@ module.exports = {
       permissions: ['INTERNET'],
     },
     plugins: ['expo-dev-client'],
-    scheme: 'thundercontrol',
+    scheme: 'parentalcontrol',
     extra: {
       firebaseApiKey: process.env.FIREBASE_API_KEY,
       firebaseAuthDomain: process.env.FIREBASE_AUTH_DOMAIN,

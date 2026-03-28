@@ -11,13 +11,13 @@ export default function LoginScreen() {
   const handleGuestLogin = async () => {
     try {
       dispatch(setLoading(true));
-      
+
       // Create a guest user
       const guestUser = {
         id: 'guest_' + Date.now(),
         email: null,
         isGuest: true,
-        role: 'parent'
+        role: 'parent',
       };
 
       // Set device info for guest
@@ -28,14 +28,11 @@ export default function LoginScreen() {
         osVersion: 'unknown',
         batteryLevel: 100,
         isOnline: true,
-        isParent: true
+        isParent: true,
       };
 
       // Update Redux state
-      await Promise.all([
-        dispatch(setUser(guestUser)),
-        dispatch(setDeviceInfo(deviceInfo))
-      ]);
+      await Promise.all([dispatch(setUser(guestUser)), dispatch(setDeviceInfo(deviceInfo))]);
 
       // Navigate to parent dashboard
       router.replace('/parent/dashboard');
@@ -52,37 +49,27 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>ThunderControl</Text>
+      <Text style={styles.title}>Parental Control</Text>
       <Text style={styles.subtitle}>Parental Control & Monitoring</Text>
-      
+
       {/* Regular login options will go here */}
       <View style={styles.loginOptions}>
         <TouchableOpacity style={styles.button}>
           <Text style={styles.buttonText}>Sign in with Email</Text>
         </TouchableOpacity>
-        
+
         <TouchableOpacity style={styles.button}>
           <Text style={styles.buttonText}>Sign in with Google</Text>
         </TouchableOpacity>
       </View>
 
       {/* Guest login option */}
-      <TouchableOpacity 
-        style={[styles.button, styles.guestButton]} 
-        onPress={handleGuestLogin}
-      >
-        <Text style={[styles.buttonText, styles.guestButtonText]}>
-          Continue as Guest
-        </Text>
+      <TouchableOpacity style={[styles.button, styles.guestButton]} onPress={handleGuestLogin}>
+        <Text style={[styles.buttonText, styles.guestButtonText]}>Continue as Guest</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity 
-        style={styles.registerLink}
-        onPress={handleRegister}
-      >
-        <Text style={styles.registerText}>
-          Don't have an account? Sign up
-        </Text>
+      <TouchableOpacity style={styles.registerLink} onPress={handleRegister}>
+        <Text style={styles.registerText}>Don't have an account? Sign up</Text>
       </TouchableOpacity>
     </View>
   );

@@ -7,7 +7,7 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>$(DEVELOPMENT_LANGUAGE)</string>
     <key>CFBundleDisplayName</key>
-    <string>ThunderControl</string>
+    <string>Parental Control</string>
     <key>CFBundleExecutable</key>
     <string>$(EXECUTABLE_NAME)</string>
     <key>CFBundleIdentifier</key>
@@ -27,14 +27,14 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>thundercontrol</string>
-          <string>com.yourcompany.thundercontrol</string>
+          <string>parentalcontrol</string>
+          <string>com.yourcompany.parentalcontrol</string>
         </array>
       </dict>
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>exp+thunder-control</string>
+          <string>exp+parental-control</string>
         </array>
       </dict>
     </array>

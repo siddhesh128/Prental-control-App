@@ -95,7 +95,7 @@ export default function ReportsScreen() {
 
       // Share report
       await Share.share({
-        title: `${report.title} - ThunderControl`,
+        title: `${report.title} - Parental Control`,
         message: reportText,
       });
     } catch (error) {
@@ -108,7 +108,7 @@ export default function ReportsScreen() {
 
   const formatReportData = (type: string, data: any): string => {
     const timestamp = new Date().toLocaleString();
-    let report = `ThunderControl ${type.charAt(0).toUpperCase() + type.slice(1)} Report\n`;
+    let report = `Parental Control ${type.charAt(0).toUpperCase() + type.slice(1)} Report\n`;
     report += `Generated: ${timestamp}\n\n`;
 
     switch (type) {

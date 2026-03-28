@@ -1,12 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  Alert,
-  ScrollView,
-} from 'react-native';
+import { View, StyleSheet, KeyboardAvoidingView, Platform, Alert, ScrollView } from 'react-native';
 import { Input, Button, Text, CheckBox } from 'react-native-elements';
 import { useDispatch, useSelector } from 'react-redux';
 import AuthService from '../../services/auth.service';
@@ -41,14 +34,14 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
     try {
       dispatch(setLoading(true));
       let user;
-      
+
       // Check if converting from guest account
       if (currentUser?.isAnonymous) {
         user = await AuthService.convertGuestToFull(email, password, isParent);
       } else {
         user = await AuthService.signUp(email, password, isParent);
       }
-      
+
       dispatch(setUser(user));
     } catch (error: any) {
       dispatch(setError(error.message));
@@ -69,7 +62,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
             Create Account
           </Text>
           <Text style={styles.subtitle}>
-            Join ThunderControl to protect your family's digital life
+            Join Parental Control to protect your family's digital life
           </Text>
 
           <Input

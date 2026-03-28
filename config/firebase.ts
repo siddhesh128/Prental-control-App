@@ -1,17 +1,16 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
-import Constants from 'expo-constants';
 
-// Your web app's Firebase configuration
+// Keep Firebase config sourced from Expo public env vars.
 const firebaseConfig = {
-  apiKey: "AIzaSyAqrPCEA-T1o9khUJ9xTGKOVZ9wqMA37xk",
-  authDomain: "thundercontrol-8d40f.firebaseapp.com",
-  projectId: "thundercontrol-8d40f",
-  storageBucket: "thundercontrol-8d40f.firebasestorage.app",
-  messagingSenderId: "347105322813",
-  appId: "1:347105322813:web:61bdb9af2c3134cfd28754",
-  measurementId: "G-KYETXR84GM"
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
 // Initialize Firebase

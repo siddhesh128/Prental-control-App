@@ -13,7 +13,7 @@ This guide lets you copy-paste commands and see exactly what to do.
 ```
 1. Visit: https://console.firebase.google.com
 2. Click: "Add project" (big blue button)
-3. Enter: "ThunderControl"
+3. Enter: "Parental Control"
 4. Region: Choose closest to you ✓
 5. Click: "Create project"
 6. WAIT: 2-3 minutes (shows loading bar)
@@ -109,7 +109,7 @@ Go to: Realtime Database → Copy URL:
 
 ```bash
 # Make sure you're in the project folder
-cd /Users/siddhesh/Desktop/ThunderControl-master
+cd /Users/siddhesh/Desktop/ParentalControl-master
 
 # List files to verify
 ls -la
@@ -186,13 +186,13 @@ EXPO_PUBLIC_FIREBASE_DATABASE_URL=https://YOUR_PROJECT_ID.firebaseio.com
 
 ```env
 EXPO_PUBLIC_FIREBASE_API_KEY=AIzaSyDl5v_qQ8z7RxT9pKmL3OvW1YuZ4xAb5Cd
-EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=thundercontrol-p1a2b.firebaseapp.com
-EXPO_PUBLIC_FIREBASE_PROJECT_ID=thundercontrol-p1a2b
-EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=thundercontrol-p1a2b.appspot.com
+EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=parental-control-p1a2b.firebaseapp.com
+EXPO_PUBLIC_FIREBASE_PROJECT_ID=parental-control-p1a2b
+EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=parental-control-p1a2b.appspot.com
 EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=123456789012
 EXPO_PUBLIC_FIREBASE_APP_ID=1:123456789012:web:abcd1234efgh5678ijkl
 EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID=G-ABC123DEFG
-EXPO_PUBLIC_FIREBASE_DATABASE_URL=https://thundercontrol-p1a2b.firebaseio.com
+EXPO_PUBLIC_FIREBASE_DATABASE_URL=https://parental-control-p1a2b.firebaseio.com
 ```
 
 **Save the file!**
@@ -233,7 +233,7 @@ Replace `YOUR_PROJECT_ID` with your actual project ID:
 ```json
 {
   "projects": {
-    "default": "thundercontrol-p1a2b"
+    "default": "parental-control-p1a2b"
   }
 }
 ```
@@ -322,7 +322,7 @@ Web interface (Emulator UI): http://127.0.0.1:4000
 
 ```bash
 # Open NEW terminal (don't close the emulator one!)
-cd /Users/siddhesh/Desktop/ThunderControl-master
+cd /Users/siddhesh/Desktop/ParentalControl-master
 
 npx expo start
 ```

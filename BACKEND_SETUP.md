@@ -2,7 +2,7 @@
 
 ## Overview
 
-ThunderControl uses Firebase for backend services:
+Parental Control uses Firebase for backend services:
 
 - **Firestore**: Real-time database for storing pairings, user relationships, and activity logs
 - **Cloud Functions**: Serverless APIs for pairing, monitoring, and communication

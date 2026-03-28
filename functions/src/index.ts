@@ -1,5 +1,5 @@
 /**
- * Firebase Cloud Functions for ThunderControl
+ * Firebase Cloud Functions for Parental Control
  * Handles device pairing, monitoring, and communication
  */
 

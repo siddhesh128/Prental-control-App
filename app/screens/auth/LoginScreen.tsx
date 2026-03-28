@@ -1,11 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  Alert,
-} from 'react-native';
+import { View, StyleSheet, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { Input, Button, Text, Divider } from 'react-native-elements';
 import { useDispatch } from 'react-redux';
 import { AuthService } from '../../services/auth.service';
@@ -60,11 +54,9 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
     >
       <View style={styles.formContainer}>
         <Text h3 style={styles.title}>
-          ThunderControl
+          Parental Control
         </Text>
-        <Text style={styles.subtitle}>
-          Monitor and protect your child's digital experience
-        </Text>
+        <Text style={styles.subtitle}>Monitor and protect your child's digital experience</Text>
 
         <Input
           placeholder="Email"
@@ -83,11 +75,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
           secureTextEntry
         />
 
-        <Button
-          title="Login"
-          onPress={handleLogin}
-          containerStyle={styles.buttonContainer}
-        />
+        <Button title="Login" onPress={handleLogin} containerStyle={styles.buttonContainer} />
 
         <Button
           title="Create Account"

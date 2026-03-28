@@ -1,8 +1,8 @@
-# ThunderControl Backend Pairing Implementation - Summary
+# Parental Control Backend Pairing Implementation - Summary
 
 ## 🎯 Objective
 
-Implement secure QR code-based device pairing system with Firebase backend APIs for ThunderControl mobile app.
+Implement secure QR code-based device pairing system with Firebase backend APIs for Parental Control mobile app.
 
 ## ✅ Completed Implementation
 

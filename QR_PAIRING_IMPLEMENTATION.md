@@ -2,7 +2,7 @@
 
 ## Overview
 
-The ThunderControl app now features a secure QR code-based device pairing system that allows parents to pair child devices without manual setup. This is much more secure and user-friendly than the previous manual approach.
+The Parental Control app now features a secure QR code-based device pairing system that allows parents to pair child devices without manual setup. This is much more secure and user-friendly than the previous manual approach.
 
 ## Architecture
 
