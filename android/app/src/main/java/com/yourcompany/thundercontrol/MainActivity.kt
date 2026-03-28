@@ -1,4 +1,4 @@
-package com.yourcompany.thundercontrol
+package com.parentalcontrol.app
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

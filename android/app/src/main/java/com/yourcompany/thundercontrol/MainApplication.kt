@@ -1,4 +1,4 @@
-package com.yourcompany.thundercontrol
+package com.parentalcontrol.app
 
 import android.app.Application
 import android.content.res.Configuration

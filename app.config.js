@@ -8,7 +8,7 @@ module.exports = {
     assetBundlePatterns: ['**/*'],
     ios: {
       supportsTablet: true,
-      bundleIdentifier: 'com.yourcompany.thundercontrol',
+      bundleIdentifier: 'com.parentalcontrol.app',
       googleServicesFile: './GoogleService-Info.plist',
       config: {
         googleSignIn: {
@@ -17,8 +17,8 @@ module.exports = {
       },
     },
     android: {
-      package: 'com.yourcompany.thundercontrol',
-      googleServicesFile: './google-services.json',
+      package: 'com.parentalcontrol.app',
+      googleServicesFile: './android/app/google-services.json',
       permissions: ['INTERNET'],
     },
     plugins: ['expo-dev-client'],

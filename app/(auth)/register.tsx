@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Alert } from 'react-native';
+import { View, Text, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { useDispatch } from 'react-redux';
 import { router } from 'expo-router';
-import { setUser, setLoading } from '../../store/slices/authSlice';
-import { setDeviceInfo } from '../../store/slices/deviceSlice';
+import { setUser, setLoading } from '../store/slices/authSlice';
+import { setIsChild } from '../store/slices/deviceSlice';
 import { Input, Button } from 'react-native-elements';
 import AuthService from '../services/auth.service';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,6 +12,7 @@ const RegisterScreen: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [isParentMode, setIsParentMode] = useState(true);
   const dispatch = useDispatch();
 
   const handleSignUp = async () => {
@@ -29,8 +30,8 @@ const RegisterScreen: React.FC = () => {
       dispatch(setLoading(true));
       const user = await AuthService.signUp(email, password);
       dispatch(setUser(user));
-      dispatch(setDeviceInfo({ isParent: true }));
-      router.replace('/(tabs)');
+      dispatch(setIsChild(!isParentMode));
+      router.replace(isParentMode ? '/(parent)' : '/(child)/dashboard');
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to sign up');
     } finally {
@@ -46,6 +47,24 @@ const RegisterScreen: React.FC = () => {
     <View style={styles.container}>
       <View style={styles.formContainer}>
         <Text style={styles.title}>Create Account</Text>
+        <View style={styles.roleToggle}>
+          <TouchableOpacity
+            style={[styles.roleOption, isParentMode && styles.roleOptionActive]}
+            onPress={() => setIsParentMode(true)}
+          >
+            <Text style={[styles.roleOptionText, isParentMode && styles.roleOptionTextActive]}>
+              Parent Account
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.roleOption, !isParentMode && styles.roleOptionActive]}
+            onPress={() => setIsParentMode(false)}
+          >
+            <Text style={[styles.roleOptionText, !isParentMode && styles.roleOptionTextActive]}>
+              Child Account
+            </Text>
+          </TouchableOpacity>
+        </View>
         <Input
           placeholder="Email"
           value={email}
@@ -80,7 +99,9 @@ const RegisterScreen: React.FC = () => {
           containerStyle={styles.buttonContainer}
           buttonStyle={styles.backButton}
           titleStyle={styles.backButtonText}
-          icon={<Ionicons name="arrow-back-outline" size={24} color="#0a7ea4" style={styles.backIcon} />}
+          icon={
+            <Ionicons name="arrow-back-outline" size={24} color="#0a7ea4" style={styles.backIcon} />
+          }
         />
       </View>
     </View>
@@ -106,6 +127,30 @@ const styles = StyleSheet.create({
   buttonContainer: {
     marginTop: 10,
     width: '100%',
+  },
+  roleToggle: {
+    flexDirection: 'row',
+    marginBottom: 16,
+    borderRadius: 8,
+    backgroundColor: '#eef3f7',
+    padding: 4,
+  },
+  roleOption: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  roleOptionActive: {
+    backgroundColor: '#0a7ea4',
+  },
+  roleOptionText: {
+    color: '#1f2937',
+    fontWeight: '600',
+    fontSize: 13,
+  },
+  roleOptionTextActive: {
+    color: '#fff',
   },
   button: {
     backgroundColor: '#0a7ea4',

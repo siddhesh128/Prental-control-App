@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, Platform } from 'react-native';
 import { useDispatch } from 'react-redux';
 import { router } from 'expo-router';
-import { setUser, setLoading } from '../../store/slices/authSlice';
-import { setDeviceInfo } from '../../store/slices/deviceSlice';
+import { setUser, setLoading } from '../store/slices/authSlice';
+import { setIsChild } from '../store/slices/deviceSlice';
 import { Input, Button } from 'react-native-elements';
 import AuthService from '../services/auth.service';
 import GoogleAuthService from '../services/google-auth.service';
@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isParentMode, setIsParentMode] = useState(true);
   const dispatch = useDispatch();
 
   const handleEmailSignIn = async () => {
@@ -24,8 +25,8 @@ function LoginScreen() {
       dispatch(setLoading(true));
       const user = await AuthService.signIn(email, password);
       dispatch(setUser(user));
-      dispatch(setDeviceInfo({ isParent: true }));
-      router.replace('/(parent)');
+      dispatch(setIsChild(!isParentMode));
+      router.replace(isParentMode ? '/(parent)' : '/(child)/dashboard');
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to sign in');
     } finally {
@@ -47,7 +48,7 @@ function LoginScreen() {
     try {
       const guestUser = AuthService.signInAsGuest();
       dispatch(setUser(guestUser));
-      dispatch(setDeviceInfo({ isParent: true }));
+      dispatch(setIsChild(false));
       router.replace('/(parent)');
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to sign in as guest');
@@ -62,6 +63,24 @@ function LoginScreen() {
     <View style={styles.container}>
       <View style={styles.formContainer}>
         <Text style={styles.title}>Welcome to ThunderControl</Text>
+        <View style={styles.roleToggle}>
+          <TouchableOpacity
+            style={[styles.roleOption, isParentMode && styles.roleOptionActive]}
+            onPress={() => setIsParentMode(true)}
+          >
+            <Text style={[styles.roleOptionText, isParentMode && styles.roleOptionTextActive]}>
+              Parent
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.roleOption, !isParentMode && styles.roleOptionActive]}
+            onPress={() => setIsParentMode(false)}
+          >
+            <Text style={[styles.roleOptionText, !isParentMode && styles.roleOptionTextActive]}>
+              Child
+            </Text>
+          </TouchableOpacity>
+        </View>
         <Input
           placeholder="Email"
           value={email}
@@ -91,10 +110,11 @@ function LoginScreen() {
           icon={<Ionicons name="logo-google" size={24} color="white" style={styles.googleIcon} />}
         />
         <Button
-          title="Continue as Guest"
+          title="Continue as Guest (Parent)"
           onPress={handleGuestLogin}
           type="outline"
           containerStyle={styles.buttonContainer}
+          disabled={!isParentMode}
         />
         <TouchableOpacity onPress={handleSignUp} style={styles.signUpContainer}>
           <Text style={styles.signUpText}>Don't have an account? Sign Up</Text>
@@ -102,7 +122,7 @@ function LoginScreen() {
       </View>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -142,6 +162,29 @@ const styles = StyleSheet.create({
   signUpContainer: {
     marginTop: 15,
     alignItems: 'center',
+  },
+  roleToggle: {
+    flexDirection: 'row',
+    marginBottom: 16,
+    borderRadius: 8,
+    backgroundColor: '#eef3f7',
+    padding: 4,
+  },
+  roleOption: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  roleOptionActive: {
+    backgroundColor: '#2089dc',
+  },
+  roleOptionText: {
+    color: '#1f2937',
+    fontWeight: '600',
+  },
+  roleOptionTextActive: {
+    color: '#fff',
   },
   signUpText: {
     color: '#2089dc',

@@ -1,0 +1,79 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default: deny all access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ====================================================================
+    // USERS COLLECTION - Each user can only access their own data
+    // ====================================================================
+    match /users/{userId} {
+      // User can read/write their own profile
+      allow read, write: if request.auth.uid == userId;
+      
+      // Children subcollection - parent's view of paired children
+      match /children/{childId} {
+        allow read, write: if request.auth.uid == userId;
+      }
+
+      // Devices subcollection - user's devices
+      match /devices/{deviceId} {
+        allow read, write: if request.auth.uid == userId;
+        
+        // Paired children subcollection - devices paired with this device
+        match /pairedChildren/{childId} {
+          allow read, write: if request.auth.uid == userId;
+        }
+      }
+
+      // Activities subcollection - activity logs for child devices
+      match /activities/{activityId} {
+        allow read: if request.auth.uid == userId;
+        allow write: if request.auth.uid == userId;
+      }
+    }
+
+    // ====================================================================
+    // PAIRING SESSIONS COLLECTION - Temporary pairing tokens
+    // ====================================================================
+    match /pairingSessions/{sessionId} {
+      // Anyone authenticated can read them (needed for validation)
+      allow read: if request.auth.uid != null;
+      // Temporary client writes to support pairing without Cloud Functions
+      allow create, update: if request.auth.uid != null;
+      allow delete: if false;
+    }
+
+    // ====================================================================
+    // DEVICE PAIRINGS COLLECTION - Confirmed pairings
+    // ====================================================================
+    match /devicePairings/{pairingId} {
+      // Anyone authenticated can read
+      allow read: if request.auth.uid != null;
+      // Temporary client writes to support pairing without Cloud Functions
+      allow create, update: if request.auth.uid != null;
+      allow delete: if request.auth.uid != null;
+    }
+
+    // ====================================================================
+    // MONITORING DATA COLLECTION (Future expansion)
+    // ====================================================================
+    match /monitoringData/{childId}/{collectionId=**} {
+      // Parent can read monitoring data for their child
+      allow read: if request.auth.uid != null;
+      // Only Cloud Functions write this
+      allow write: if false;
+    }
+
+    // ====================================================================
+    // RESTRICTIONS COLLECTION (Future expansion)
+    // ====================================================================
+    match /restrictions/{childId}/apps/{appId} {
+      // Parent can read/update restrictions for their child
+      allow read: if request.auth.uid != null;
+      allow write: if request.auth.uid != null;
+    }
+  }
+}

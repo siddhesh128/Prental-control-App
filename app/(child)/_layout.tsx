@@ -5,12 +5,10 @@ import { Redirect } from 'expo-router';
 
 export default function ChildLayout() {
   const user = useSelector((state: RootState) => state.auth.user);
-  const isParent = useSelector((state: RootState) => 
-    state.device.info?.isParent ?? false
-  );
+  const isChild = useSelector((state: RootState) => state.device.isChild);
 
   // Protect child routes
-  if (!user || isParent) {
+  if (!user || !isChild) {
     return <Redirect href="/(auth)/login" />;
   }
 
@@ -31,6 +29,13 @@ export default function ChildLayout() {
         options={{
           title: 'My Dashboard',
           headerLargeTitle: true,
+        }}
+      />
+      <Stack.Screen
+        name="pair-with-parent"
+        options={{
+          title: 'Pair with Parent',
+          presentation: 'modal',
         }}
       />
     </Stack>

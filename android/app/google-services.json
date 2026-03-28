@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "347105322813",
-    "project_id": "thundercontrol-8d40f",
-    "storage_bucket": "thundercontrol-8d40f.firebasestorage.app"
+    "project_number": "359617343381",
+    "project_id": "parental-control-e14d0",
+    "storage_bucket": "parental-control-e14d0.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:347105322813:android:a4761d2f758214bcd28754",
+        "mobilesdk_app_id": "1:359617343381:android:153853567cad7b1d0d909c",
         "android_client_info": {
-          "package_name": "com.yourcompany.thundercontrol"
+          "package_name": "com.parentalcontrol.app"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyAc9rX8tQnehwnJh94CNJOJOM1oR54sTfY"
+          "current_key": "AIzaSyDCzOSb403TCcFeknqs-7gYj0sbSfyUMJU"
         }
       ],
       "services": {

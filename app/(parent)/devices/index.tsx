@@ -13,8 +13,10 @@ import ThemedView from '@/_components/ThemedView';
 import { IconSymbol } from '@/_components/ui/IconSymbol';
 import Colors from '@/constants/Colors';
 import DeviceManagementService, { ChildDevice } from '@/services/device-management.service';
+import PairingService from '@/services/pairing.service';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { getAuth } from 'firebase/auth';
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
@@ -23,6 +25,29 @@ export default function DevicesScreen() {
   const navigation = useNavigation<NavigationProp>();
   const [devices, setDevices] = useState<ChildDevice[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const toTimestampMillis = (value: any): number => {
+    if (typeof value === 'number') {
+      return value < 1_000_000_000_000 ? value * 1000 : value;
+    }
+
+    if (value && typeof value.toMillis === 'function') {
+      return value.toMillis();
+    }
+
+    if (value && typeof value.seconds === 'number') {
+      return value.seconds * 1000;
+    }
+
+    if (typeof value === 'string') {
+      const parsed = Date.parse(value);
+      if (!Number.isNaN(parsed)) {
+        return parsed;
+      }
+    }
+
+    return Date.now();
+  };
 
   const handleAddDevice = () => {
     router.push('/(parent)/add-device');
@@ -43,8 +68,33 @@ export default function DevicesScreen() {
   const loadDevices = async () => {
     try {
       setLoading(true);
-      const deviceList = await DeviceManagementService.getChildDevices();
-      setDevices(deviceList);
+      const uid = getAuth().currentUser?.uid;
+
+      if (uid) {
+        const pairings = await PairingService.getParentPairings(uid);
+        const pairedDevices: ChildDevice[] = pairings.map((pairing) => ({
+          id: pairing.id,
+          name: pairing.childDeviceName || 'Child Device',
+          deviceModel: 'Linked Device',
+          platform: 'android',
+          status: 'online',
+          batteryLevel: 1,
+          lastSeen: new Date(
+            toTimestampMillis(pairing.confirmedAt ?? pairing.createdAt)
+          ).toISOString(),
+          restrictions: {
+            appUsageLimits: false,
+            contentFiltering: true,
+            screenTime: false,
+            appInstallation: true,
+          },
+        }));
+
+        setDevices(pairedDevices);
+      } else {
+        const deviceList = await DeviceManagementService.getChildDevices();
+        setDevices(deviceList);
+      }
     } catch (error) {
       console.error('Error loading devices:', error);
       Alert.alert('Error', 'Failed to load devices. Please try again.');
@@ -80,7 +130,12 @@ export default function DevicesScreen() {
                 text: 'Remove',
                 style: 'destructive',
                 onPress: async () => {
-                  await DeviceManagementService.removeDevice(deviceId);
+                  const uid = getAuth().currentUser?.uid;
+                  if (uid) {
+                    await PairingService.unpairDevice(deviceId);
+                  } else {
+                    await DeviceManagementService.removeDevice(deviceId);
+                  }
                   loadDevices();
                 },
               },

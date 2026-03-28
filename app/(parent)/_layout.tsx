@@ -5,12 +5,10 @@ import { Redirect } from 'expo-router';
 
 export default function ParentLayout() {
   const user = useSelector((state: RootState) => state.auth.user);
-  const isParent = useSelector((state: RootState) => 
-    state.device.info?.isParent ?? false
-  );
+  const isChild = useSelector((state: RootState) => state.device.isChild);
 
   // Protect parent routes
-  if (!user || !isParent) {
+  if (!user || isChild) {
     return <Redirect href="/(auth)/login" />;
   }
 
@@ -31,55 +29,67 @@ export default function ParentLayout() {
         name="index"
         options={{
           title: 'Dashboard',
-          headerShown: false
+          headerShown: false,
         }}
       />
       <Stack.Screen
-        name="location"
+        name="location/index"
         options={{
-          title: 'Location Tracking'
+          title: 'Location Tracking',
         }}
       />
       <Stack.Screen
-        name="call-logs"
+        name="call-logs/index"
         options={{
-          title: 'Call Logs'
+          title: 'Call Logs',
         }}
       />
       <Stack.Screen
-        name="messages"
+        name="messages/index"
         options={{
-          title: 'Messages'
+          title: 'Messages',
         }}
       />
       <Stack.Screen
-        name="devices"
+        name="devices/index"
         options={{
-          title: 'Devices'
+          title: 'Devices',
         }}
       />
       <Stack.Screen
-        name="device-restrictions"
+        name="device-restrictions/index"
         options={{
-          title: 'Restrictions'
+          title: 'Restrictions',
         }}
       />
       <Stack.Screen
-        name="reports"
+        name="reports/index"
         options={{
-          title: 'Reports'
+          title: 'Reports',
+        }}
+      />
+      <Stack.Screen
+        name="reports/[type]"
+        options={{
+          title: 'Report Detail',
+        }}
+      />
+      <Stack.Screen
+        name="add-device/index"
+        options={{
+          title: 'Add Device',
         }}
       />
       <Stack.Screen
         name="settings"
         options={{
-          title: 'Settings'
+          title: 'Settings',
         }}
       />
       <Stack.Screen
         name="profile"
         options={{
-          title: 'Profile'
+          title: 'Profile',
         }}
       />
     </Stack>

@@ -8,9 +8,7 @@ import { setLoading } from '../store/slices/authSlice';
 export default function Index() {
   const dispatch = useDispatch();
   const { user, isLoading } = useSelector((state: RootState) => state.auth);
-  const isParent = useSelector((state: RootState) => 
-    state.device.info?.isParent ?? false
-  );
+  const isChild = useSelector((state: RootState) => state.device.isChild);
 
   useEffect(() => {
     // Initialize auth state
@@ -31,9 +29,5 @@ export default function Index() {
     return <Redirect href="/(auth)/login" />;
   }
 
-  return isParent ? (
-    <Redirect href="/(parent)/dashboard" />
-  ) : (
-    <Redirect href="/(child)/dashboard" />
-  );
+  return isChild ? <Redirect href="/(child)/dashboard" /> : <Redirect href="/(parent)" />;
 }
