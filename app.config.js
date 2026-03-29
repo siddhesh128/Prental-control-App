@@ -21,7 +21,7 @@ module.exports = {
       googleServicesFile: './android/app/google-services.json',
       permissions: ['INTERNET'],
     },
-    plugins: ['expo-dev-client'],
+    plugins: process.env.EXPO_USE_DEV_CLIENT === 'true' ? ['expo-dev-client'] : [],
     scheme: 'parentalcontrol',
     extra: {
       firebaseApiKey: process.env.FIREBASE_API_KEY,
