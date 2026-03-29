@@ -1,10 +1,19 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Alert, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Alert,
+  TouchableOpacity,
+  TextInput,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { useDispatch } from 'react-redux';
 import { router } from 'expo-router';
 import { setUser, setLoading } from '../store/slices/authSlice';
 import { setIsChild } from '../store/slices/deviceSlice';
-import { Input, Button } from 'react-native-elements';
 import AuthService from '../services/auth.service';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -44,131 +53,216 @@ const RegisterScreen: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.formContainer}>
-        <Text style={styles.title}>Create Account</Text>
-        <View style={styles.roleToggle}>
-          <TouchableOpacity
-            style={[styles.roleOption, isParentMode && styles.roleOptionActive]}
-            onPress={() => setIsParentMode(true)}
-          >
-            <Text style={[styles.roleOptionText, isParentMode && styles.roleOptionTextActive]}>
-              Parent Account
-            </Text>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.select({ ios: 'padding', android: undefined })}
+    >
+      <View style={styles.blobOne} />
+      <View style={styles.blobTwo} />
+
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.card}>
+          <Text style={styles.eyebrow}>Create Profile</Text>
+          <Text style={styles.title}>Sign Up</Text>
+          <Text style={styles.subtitle}>Set up secure access for parent or child mode.</Text>
+
+          <View style={styles.roleToggle}>
+            <TouchableOpacity
+              style={[styles.roleOption, isParentMode && styles.roleOptionActive]}
+              onPress={() => setIsParentMode(true)}
+            >
+              <Text style={[styles.roleOptionText, isParentMode && styles.roleOptionTextActive]}>
+                Parent
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.roleOption, !isParentMode && styles.roleOptionActive]}
+              onPress={() => setIsParentMode(false)}
+            >
+              <Text style={[styles.roleOptionText, !isParentMode && styles.roleOptionTextActive]}>
+                Child
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.inputWrap}>
+            <Ionicons name="mail-outline" size={18} color="#5C6C87" />
+            <TextInput
+              placeholder="Email"
+              placeholderTextColor="#7E8CA5"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              style={styles.input}
+            />
+          </View>
+
+          <View style={styles.inputWrap}>
+            <Ionicons name="lock-closed-outline" size={18} color="#5C6C87" />
+            <TextInput
+              placeholder="Password"
+              placeholderTextColor="#7E8CA5"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              style={styles.input}
+            />
+          </View>
+
+          <View style={styles.inputWrap}>
+            <Ionicons name="shield-checkmark-outline" size={18} color="#5C6C87" />
+            <TextInput
+              placeholder="Confirm Password"
+              placeholderTextColor="#7E8CA5"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry
+              style={styles.input}
+            />
+          </View>
+
+          <TouchableOpacity style={styles.primaryButton} onPress={handleSignUp}>
+            <Text style={styles.primaryButtonText}>Create Account</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.roleOption, !isParentMode && styles.roleOptionActive]}
-            onPress={() => setIsParentMode(false)}
-          >
-            <Text style={[styles.roleOptionText, !isParentMode && styles.roleOptionTextActive]}>
-              Child Account
-            </Text>
+
+          <TouchableOpacity style={styles.ghostButton} onPress={handleBackToLogin}>
+            <Ionicons name="arrow-back-outline" size={18} color="#203D73" style={styles.btnIcon} />
+            <Text style={styles.ghostButtonText}>Back to Login</Text>
           </TouchableOpacity>
         </View>
-        <Input
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          leftIcon={<Ionicons name="mail-outline" size={24} color="#666" />}
-        />
-        <Input
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          leftIcon={<Ionicons name="lock-closed-outline" size={24} color="#666" />}
-        />
-        <Input
-          placeholder="Confirm Password"
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          secureTextEntry
-          leftIcon={<Ionicons name="lock-closed-outline" size={24} color="#666" />}
-        />
-        <Button
-          title="Sign Up"
-          onPress={handleSignUp}
-          containerStyle={styles.buttonContainer}
-          buttonStyle={styles.button}
-        />
-        <Button
-          title="Back to Login"
-          onPress={handleBackToLogin}
-          containerStyle={styles.buttonContainer}
-          buttonStyle={styles.backButton}
-          titleStyle={styles.backButtonText}
-          icon={
-            <Ionicons name="arrow-back-outline" size={24} color="#0a7ea4" style={styles.backIcon} />
-          }
-        />
-      </View>
-    </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#081629',
+  },
+  blobOne: {
+    position: 'absolute',
+    width: 260,
+    height: 260,
+    borderRadius: 130,
+    backgroundColor: 'rgba(74, 144, 255, 0.35)',
+    top: -90,
+    right: -70,
+  },
+  blobTwo: {
+    position: 'absolute',
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    backgroundColor: 'rgba(38, 208, 206, 0.25)',
+    bottom: -100,
+    left: -80,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
     padding: 20,
   },
-  formContainer: {
-    flex: 1,
-    justifyContent: 'center',
+  card: {
+    borderRadius: 24,
+    backgroundColor: '#F4F7FD',
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+  eyebrow: {
+    color: '#2F5AA8',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    fontSize: 12,
+    letterSpacing: 1,
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 30,
-    textAlign: 'center',
+    marginTop: 8,
+    fontSize: 32,
+    color: '#16243E',
+    fontFamily: 'SpaceMono',
   },
-  buttonContainer: {
-    marginTop: 10,
-    width: '100%',
+  subtitle: {
+    marginTop: 6,
+    marginBottom: 18,
+    color: '#52617C',
+    fontSize: 14,
+    lineHeight: 20,
   },
   roleToggle: {
     flexDirection: 'row',
-    marginBottom: 16,
-    borderRadius: 8,
-    backgroundColor: '#eef3f7',
+    marginBottom: 18,
+    borderRadius: 12,
+    backgroundColor: '#E6ECF7',
     padding: 4,
   },
   roleOption: {
     flex: 1,
-    paddingVertical: 10,
-    borderRadius: 6,
+    paddingVertical: 11,
+    borderRadius: 10,
     alignItems: 'center',
   },
   roleOptionActive: {
-    backgroundColor: '#0a7ea4',
+    backgroundColor: '#203D73',
   },
   roleOptionText: {
-    color: '#1f2937',
+    color: '#22314D',
     fontWeight: '600',
-    fontSize: 13,
   },
   roleOptionTextActive: {
     color: '#fff',
   },
-  button: {
-    backgroundColor: '#0a7ea4',
-    borderRadius: 8,
-    padding: 15,
+  inputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#D2DAE8',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    backgroundColor: '#FFFFFF',
+    marginBottom: 12,
   },
-  backButton: {
-    backgroundColor: 'transparent',
-    borderWidth: 2,
-    borderColor: '#0a7ea4',
-    borderRadius: 8,
-    padding: 15,
+  input: {
+    flex: 1,
+    color: '#192840',
+    fontSize: 15,
+    paddingVertical: 12,
+    marginLeft: 8,
   },
-  backIcon: {
-    marginRight: 10,
+  primaryButton: {
+    backgroundColor: '#123A82',
+    borderRadius: 12,
+    paddingVertical: 13,
+    alignItems: 'center',
+    marginTop: 6,
   },
-  backButtonText: {
-    color: '#0a7ea4',
+  primaryButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 15,
+  },
+  ghostButton: {
+    borderWidth: 1,
+    borderColor: '#203D73',
+    borderRadius: 12,
+    paddingVertical: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 10,
+    flexDirection: 'row',
+  },
+  btnIcon: {
+    marginRight: 8,
+  },
+  ghostButtonText: {
+    color: '#203D73',
+    fontWeight: '700',
+    fontSize: 14,
   },
 });
 

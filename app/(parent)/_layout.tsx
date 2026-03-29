@@ -16,13 +16,15 @@ export default function ParentLayout() {
     <Stack
       screenOptions={{
         headerStyle: {
-          backgroundColor: '#f5f5f5',
+          backgroundColor: '#0A1B35',
         },
-        headerTintColor: '#000',
+        headerTintColor: '#E8F2FF',
         headerTitleStyle: {
-          fontWeight: 'bold',
+          color: '#E8F2FF',
+          fontWeight: '700',
         },
-        headerBackTitleVisible: false,
+        headerShadowVisible: false,
+        headerBackButtonDisplayMode: 'minimal',
       }}
     >
       <Stack.Screen

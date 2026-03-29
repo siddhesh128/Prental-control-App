@@ -21,7 +21,19 @@ module.exports = {
       googleServicesFile: './android/app/google-services.json',
       permissions: ['INTERNET'],
     },
-    plugins: process.env.EXPO_USE_DEV_CLIENT === 'true' ? ['expo-dev-client'] : [],
+    plugins: [
+      'expo-router',
+      [
+        'expo-splash-screen',
+        {
+          image: './assets/images/splash-icon.png',
+          imageWidth: 220,
+          resizeMode: 'contain',
+          backgroundColor: '#0B1B36',
+        },
+      ],
+      ...(process.env.EXPO_USE_DEV_CLIENT === 'true' ? ['expo-dev-client'] : []),
+    ],
     scheme: 'parentalcontrol',
     extra: {
       firebaseApiKey: process.env.FIREBASE_API_KEY,

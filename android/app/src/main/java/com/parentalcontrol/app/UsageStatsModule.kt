@@ -1,6 +1,7 @@
 package com.parentalcontrol.app
 
 import android.app.AppOpsManager
+import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
@@ -47,51 +48,8 @@ class UsageStatsModule(private val reactContext: ReactApplicationContext) :
     try {
       val usageStatsManager =
         reactContext.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
-
-      val now = System.currentTimeMillis()
-      val calendar = Calendar.getInstance().apply {
-        set(Calendar.HOUR_OF_DAY, 0)
-        set(Calendar.MINUTE, 0)
-        set(Calendar.SECOND, 0)
-        set(Calendar.MILLISECOND, 0)
-      }
-      val startOfDay = calendar.timeInMillis
-
-      // Use aggregated usage for the current day. This is more reliable than INTERVAL_BEST.
-      val aggregated = usageStatsManager.queryAndAggregateUsageStats(startOfDay, now)
-      val usageByPackage = HashMap<String, Pair<Long, Long>>()
-
-      aggregated.forEach { (packageName, usage) ->
-        val duration = usage.totalTimeInForeground
-        if (duration <= 0L) return@forEach
-        if (packageName == reactContext.packageName) return@forEach
-
-        val current = usageByPackage[packageName]
-        val totalDuration = (current?.first ?: 0L) + duration
-        val lastUsed = maxOf(current?.second ?: 0L, usage.lastTimeUsed)
-        usageByPackage[packageName] = Pair(totalDuration, lastUsed)
-      }
-
-      // Fallback for devices that return empty aggregation despite granted permission.
-      if (usageByPackage.isEmpty()) {
-        val stats = usageStatsManager.queryUsageStats(
-          UsageStatsManager.INTERVAL_DAILY,
-          startOfDay,
-          now
-        )
-
-        stats.forEach { usage ->
-          val duration = usage.totalTimeInForeground
-          val packageName = usage.packageName
-          if (duration <= 0L) return@forEach
-          if (packageName == reactContext.packageName) return@forEach
-
-          val current = usageByPackage[packageName]
-          val totalDuration = (current?.first ?: 0L) + duration
-          val lastUsed = maxOf(current?.second ?: 0L, usage.lastTimeUsed)
-          usageByPackage[packageName] = Pair(totalDuration, lastUsed)
-        }
-      }
+      val (startOfDay, now) = getTodayRange()
+      val usageByPackage = collectUsageByPackage(usageStatsManager, startOfDay, now)
 
       val result = Arguments.createMap()
       usageByPackage.forEach { (packageName, usage) ->
@@ -104,6 +62,32 @@ class UsageStatsModule(private val reactContext: ReactApplicationContext) :
       promise.resolve(result)
     } catch (e: Exception) {
       promise.reject("USAGE_STATS_FETCH_FAILED", e)
+    }
+  }
+
+  @ReactMethod
+  fun getDailyUsageSummary(promise: Promise) {
+    try {
+      val usageStatsManager =
+        reactContext.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+      val (startOfDay, now) = getTodayRange()
+      val usageByPackage = collectUsageByPackage(usageStatsManager, startOfDay, now)
+
+      val result = Arguments.createMap()
+      if (usageByPackage.isNotEmpty()) {
+        val totalScreenTimeMs = usageByPackage.values.fold(0L) { acc, value -> acc + value.first }
+        result.putDouble("totalScreenTimeMs", totalScreenTimeMs.toDouble())
+        result.putInt("appsUsedToday", usageByPackage.size)
+      } else {
+        val fallbackSummary = getUsageSummaryFromEvents(usageStatsManager, startOfDay, now)
+        result.putDouble("totalScreenTimeMs", fallbackSummary.first.toDouble())
+        result.putInt("appsUsedToday", fallbackSummary.second)
+      }
+
+      result.putDouble("lastUpdated", now.toDouble())
+      promise.resolve(result)
+    } catch (e: Exception) {
+      promise.reject("USAGE_SUMMARY_FETCH_FAILED", e)
     }
   }
 
@@ -124,5 +108,103 @@ class UsageStatsModule(private val reactContext: ReactApplicationContext) :
     } catch (e: Exception) {
       promise.reject("STORAGE_STATS_FETCH_FAILED", e)
     }
+  }
+
+  private fun getTodayRange(): Pair<Long, Long> {
+    val now = System.currentTimeMillis()
+    val calendar = Calendar.getInstance().apply {
+      set(Calendar.HOUR_OF_DAY, 0)
+      set(Calendar.MINUTE, 0)
+      set(Calendar.SECOND, 0)
+      set(Calendar.MILLISECOND, 0)
+    }
+    return Pair(calendar.timeInMillis, now)
+  }
+
+  private fun collectUsageByPackage(
+    usageStatsManager: UsageStatsManager,
+    startOfDay: Long,
+    now: Long,
+  ): HashMap<String, Pair<Long, Long>> {
+    val usageByPackage = HashMap<String, Pair<Long, Long>>()
+
+    val aggregated = usageStatsManager.queryAndAggregateUsageStats(startOfDay, now)
+    aggregated.forEach { (packageName, usage) ->
+      val duration = usage.totalTimeInForeground
+      if (duration <= 0L) return@forEach
+      if (packageName == reactContext.packageName) return@forEach
+
+      val current = usageByPackage[packageName]
+      val totalDuration = (current?.first ?: 0L) + duration
+      val lastUsed = maxOf(current?.second ?: 0L, usage.lastTimeUsed)
+      usageByPackage[packageName] = Pair(totalDuration, lastUsed)
+    }
+
+    if (usageByPackage.isNotEmpty()) {
+      return usageByPackage
+    }
+
+    val stats = usageStatsManager.queryUsageStats(
+      UsageStatsManager.INTERVAL_DAILY,
+      startOfDay,
+      now
+    )
+
+    stats.forEach { usage ->
+      val duration = usage.totalTimeInForeground
+      val packageName = usage.packageName
+      if (duration <= 0L) return@forEach
+      if (packageName == reactContext.packageName) return@forEach
+
+      val current = usageByPackage[packageName]
+      val totalDuration = (current?.first ?: 0L) + duration
+      val lastUsed = maxOf(current?.second ?: 0L, usage.lastTimeUsed)
+      usageByPackage[packageName] = Pair(totalDuration, lastUsed)
+    }
+
+    return usageByPackage
+  }
+
+  private fun getUsageSummaryFromEvents(
+    usageStatsManager: UsageStatsManager,
+    startOfDay: Long,
+    now: Long,
+  ): Pair<Long, Int> {
+    val events = usageStatsManager.queryEvents(startOfDay, now)
+    val event = UsageEvents.Event()
+    val activePackages = HashMap<String, Long>()
+    val durationByPackage = HashMap<String, Long>()
+
+    while (events.hasNextEvent()) {
+      events.getNextEvent(event)
+      val packageName = event.packageName ?: continue
+      if (packageName == reactContext.packageName) continue
+
+      when (event.eventType) {
+        UsageEvents.Event.MOVE_TO_FOREGROUND,
+        UsageEvents.Event.ACTIVITY_RESUMED -> {
+          activePackages[packageName] = event.timeStamp
+        }
+
+        UsageEvents.Event.MOVE_TO_BACKGROUND,
+        UsageEvents.Event.ACTIVITY_PAUSED -> {
+          val startedAt = activePackages.remove(packageName) ?: continue
+          if (event.timeStamp > startedAt) {
+            val previous = durationByPackage[packageName] ?: 0L
+            durationByPackage[packageName] = previous + (event.timeStamp - startedAt)
+          }
+        }
+      }
+    }
+
+    activePackages.forEach { (packageName, startedAt) ->
+      if (now > startedAt) {
+        val previous = durationByPackage[packageName] ?: 0L
+        durationByPackage[packageName] = previous + (now - startedAt)
+      }
+    }
+
+    val totalScreenTimeMs = durationByPackage.values.fold(0L) { acc, duration -> acc + duration }
+    return Pair(totalScreenTimeMs, durationByPackage.size)
   }
 }

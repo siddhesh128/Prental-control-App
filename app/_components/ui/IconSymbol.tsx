@@ -16,7 +16,15 @@ const MAPPING = {
   'play.circle.fill': 'play-circle-filled',
   'safari.fill': 'language',
   'location.fill': 'location-on',
+  location: 'location-on',
   timer: 'timer',
+  'chart.bar': 'bar-chart',
+  'battery.100': 'battery-full',
+  internaldrive: 'storage',
+  'apps.iphone': 'apps',
+  map: 'map',
+  'lock.shield': 'security',
+  'person.2.fill': 'groups',
 } as Partial<
   Record<
     import('expo-symbols').SymbolViewProps['name'],

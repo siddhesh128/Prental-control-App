@@ -9,8 +9,10 @@ import {
   NativeModules,
   Platform,
   Linking,
+  ScrollView,
 } from 'react-native';
 import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { getAuth } from 'firebase/auth';
 import PairingService from '../services/pairing.service';
 import { useFocusEffect } from '@react-navigation/native';
@@ -18,7 +20,7 @@ import * as Battery from 'expo-battery';
 import * as Location from 'expo-location';
 import * as FileSystem from 'expo-file-system/legacy';
 import { db } from '../config/firebase';
-import { push, ref, runTransaction, set } from 'firebase/database';
+import { push, ref, runTransaction, set, update } from 'firebase/database';
 
 export default function ChildDashboardScreen() {
   const [isChecking, setIsChecking] = useState(true);
@@ -75,14 +77,33 @@ export default function ChildDashboardScreen() {
     }
 
     const usageModule = (NativeModules as any).UsageStatsModule;
-    if (!usageModule?.isUsageAccessGranted || !usageModule?.getDailyUsageStats) {
+    if (!usageModule?.getDailyUsageStats) {
       return;
     }
 
-    const accessGranted = await usageModule.isUsageAccessGranted();
-    setHasUsageAccess(!!accessGranted);
+    let accessGranted = false;
+    if (usageModule?.isUsageAccessGranted) {
+      try {
+        accessGranted = !!(await usageModule.isUsageAccessGranted());
+      } catch {
+        accessGranted = false;
+      }
+    }
 
-    if (!accessGranted) {
+    let usageStats: Record<string, any> = {};
+    try {
+      const rawUsage = await usageModule.getDailyUsageStats();
+      if (rawUsage && typeof rawUsage === 'object') {
+        usageStats = rawUsage as Record<string, any>;
+      }
+    } catch (usageError) {
+      console.warn('Failed to fetch daily usage stats:', usageError);
+    }
+
+    const hasUsageData = Object.keys(usageStats).length > 0;
+    setHasUsageAccess(accessGranted || hasUsageData);
+
+    if (!accessGranted && !hasUsageData) {
       if (!promptedUsageAccessRef.current) {
         promptedUsageAccessRef.current = true;
         Alert.alert(
@@ -101,14 +122,47 @@ export default function ChildDashboardScreen() {
           ]
         );
       }
-      return false;
     }
 
-    const usageStats = await usageModule.getDailyUsageStats();
-    if (usageStats && typeof usageStats === 'object') {
-      await set(ref(db, `screenTime/${uid}`), usageStats);
+    // Persist even empty objects so stale screen-time entries don't stick forever.
+    await set(ref(db, `screenTime/${uid}`), usageStats);
+
+    const usageValues = Object.values(usageStats) as Array<{
+      duration?: number;
+      lastUsed?: number;
+    }>;
+    const totalFromUsageMap = usageValues.reduce(
+      (acc, item) => acc + Number(item?.duration || 0),
+      0
+    );
+    const latestUsageTimestamp = usageValues.reduce(
+      (latest, item) => Math.max(latest, Number(item?.lastUsed || 0)),
+      0
+    );
+
+    let appsUsedToday = Object.keys(usageStats).length;
+    let totalScreenTimeMs = totalFromUsageMap;
+
+    if (usageModule?.getDailyUsageSummary) {
+      try {
+        const summary = await usageModule.getDailyUsageSummary();
+        if (summary && typeof summary === 'object') {
+          appsUsedToday = Number(summary.appsUsedToday || appsUsedToday);
+          totalScreenTimeMs = Number(summary.totalScreenTimeMs || totalScreenTimeMs);
+        }
+      } catch (summaryError) {
+        console.warn('Failed to fetch usage summary:', summaryError);
+      }
     }
-    return true;
+
+    await update(ref(db, `devices/${uid}`), {
+      screenTimeToday: totalScreenTimeMs,
+      appsUsedToday,
+      usageLastUpdated: Date.now(),
+      screenTimeMapLastUsed: latestUsageTimestamp,
+    });
+
+    return accessGranted || hasUsageData;
   }, []);
 
   const checkPairing = React.useCallback(async () => {
@@ -155,7 +209,7 @@ export default function ChildDashboardScreen() {
       const elapsedMs = lastSyncAt ? Math.max(0, now - lastSyncAt) : 0;
       lastScreenTimeSyncRef.current = now;
 
-      await set(ref(db, `devices/${uid}`), {
+      await update(ref(db, `devices/${uid}`), {
         batteryLevel,
         storageUsed,
         isOnline: true,
@@ -225,34 +279,89 @@ export default function ChildDashboardScreen() {
 
   if (isChecking) {
     return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#0a7ea4" />
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#6CC6FF" />
+        <Text style={styles.loadingText}>Preparing dashboard...</Text>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Child Dashboard</Text>
-      {isPaired ? (
-        <>
+      <View style={styles.bgTop} />
+      <View style={styles.bgBottom} />
+
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <View style={styles.headerCard}>
+          <View style={styles.headerIconWrap}>
+            <Ionicons name="shield-checkmark-outline" size={28} color="#8FD4FF" />
+          </View>
+          <Text style={styles.title}>Child Dashboard</Text>
           <Text style={styles.subtitle}>
-            This device is already linked with parent successfully.
+            Live sync is active for battery, storage and location.
           </Text>
-          {Platform.OS === 'android' && !hasUsageAccess && (
-            <TouchableOpacity style={styles.button} onPress={openUsageSettings}>
-              <Text style={styles.buttonText}>Enable Usage Access</Text>
+        </View>
+
+        <View style={styles.quickGrid}>
+          <View style={styles.quickCard}>
+            <Ionicons name="time-outline" size={22} color="#3F6EF3" />
+            <Text style={styles.quickTitle}>Screen Time</Text>
+            <Text style={styles.quickDesc}>Synced throughout the day</Text>
+          </View>
+
+          <View style={styles.quickCard}>
+            <Ionicons name="apps-outline" size={22} color="#0E9C87" />
+            <Text style={styles.quickTitle}>Apps Used</Text>
+            <Text style={styles.quickDesc}>Tracks overall app activity</Text>
+          </View>
+
+          <View style={styles.quickCard}>
+            <Ionicons name="location-outline" size={22} color="#D97706" />
+            <Text style={styles.quickTitle}>Location</Text>
+            <Text style={styles.quickDesc}>Realtime updates enabled</Text>
+          </View>
+
+          <View style={styles.quickCard}>
+            <Ionicons name="battery-half-outline" size={22} color="#A855F7" />
+            <Text style={styles.quickTitle}>Device Health</Text>
+            <Text style={styles.quickDesc}>Battery and storage usage</Text>
+          </View>
+        </View>
+
+        {isPaired ? (
+          <View style={styles.statusCard}>
+            <View style={styles.rowCenter}>
+              <Ionicons name="link-outline" size={20} color="#0E9C87" />
+              <Text style={styles.statusTitle}>Paired with Parent</Text>
+            </View>
+            <Text style={styles.statusDescription}>
+              This child device is connected and sending monitoring updates.
+            </Text>
+
+            {Platform.OS === 'android' && !hasUsageAccess && (
+              <TouchableOpacity style={styles.secondaryButton} onPress={openUsageSettings}>
+                <Ionicons name="settings-outline" size={18} color="#123A82" />
+                <Text style={styles.secondaryButtonText}>Enable Usage Access</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        ) : (
+          <View style={styles.statusCard}>
+            <View style={styles.rowCenter}>
+              <Ionicons name="qr-code-outline" size={20} color="#3F6EF3" />
+              <Text style={styles.statusTitle}>Not Paired Yet</Text>
+            </View>
+            <Text style={styles.statusDescription}>
+              Connect this device by scanning the parent QR code.
+            </Text>
+
+            <TouchableOpacity style={styles.primaryButton} onPress={handlePairWithParent}>
+              <Ionicons name="scan-outline" size={18} color="#FFFFFF" />
+              <Text style={styles.primaryButtonText}>Scan Parent QR Code</Text>
             </TouchableOpacity>
-          )}
-        </>
-      ) : (
-        <>
-          <Text style={styles.subtitle}>Tap below to link this device with your parent.</Text>
-          <TouchableOpacity style={styles.button} onPress={handlePairWithParent}>
-            <Text style={styles.buttonText}>Scan Parent QR Code</Text>
-          </TouchableOpacity>
-        </>
-      )}
+          </View>
+        )}
+      </ScrollView>
     </View>
   );
 }
@@ -260,29 +369,145 @@ export default function ChildDashboardScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#091A35',
+  },
+  bgTop: {
+    position: 'absolute',
+    top: -90,
+    right: -70,
+    width: 260,
+    height: 260,
+    borderRadius: 130,
+    backgroundColor: 'rgba(69, 154, 255, 0.32)',
+  },
+  bgBottom: {
+    position: 'absolute',
+    bottom: -90,
+    left: -60,
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    backgroundColor: 'rgba(77, 255, 226, 0.2)',
+  },
+  content: {
+    padding: 18,
+    paddingBottom: 28,
+  },
+  loadingContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: '#091A35',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  loadingText: {
+    marginTop: 10,
+    color: '#D5E3FF',
+    fontSize: 14,
+  },
+  headerCard: {
+    borderRadius: 22,
+    backgroundColor: 'rgba(15, 35, 72, 0.92)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+    padding: 20,
+    marginBottom: 14,
+  },
+  headerIconWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(143, 212, 255, 0.15)',
     marginBottom: 10,
   },
+  title: {
+    fontSize: 30,
+    color: '#F6FAFF',
+    fontFamily: 'SpaceMono',
+    letterSpacing: 0.3,
+  },
   subtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 20,
+    fontSize: 14,
+    color: '#BFD2F4',
+    marginTop: 6,
+    lineHeight: 20,
   },
-  button: {
-    backgroundColor: '#0a7ea4',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
+  quickGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
   },
-  buttonText: {
+  quickCard: {
+    width: '48.5%',
+    borderRadius: 16,
+    backgroundColor: '#F4F7FD',
+    padding: 14,
+    minHeight: 116,
+  },
+  quickTitle: {
+    marginTop: 8,
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1B2B48',
+  },
+  quickDesc: {
+    marginTop: 4,
+    fontSize: 12,
+    color: '#5E6D86',
+    lineHeight: 17,
+  },
+  statusCard: {
+    marginTop: 14,
+    borderRadius: 18,
+    backgroundColor: '#FFFFFF',
+    padding: 16,
+  },
+  rowCenter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  statusTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#16243E',
+  },
+  statusDescription: {
+    marginTop: 8,
+    color: '#596A86',
+    fontSize: 13,
+    lineHeight: 19,
+  },
+  primaryButton: {
+    marginTop: 14,
+    backgroundColor: '#123A82',
+    borderRadius: 12,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  primaryButtonText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  secondaryButton: {
+    marginTop: 14,
+    borderWidth: 1,
+    borderColor: '#123A82',
+    borderRadius: 12,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  secondaryButtonText: {
+    color: '#123A82',
+    fontWeight: '700',
+    fontSize: 14,
   },
 });

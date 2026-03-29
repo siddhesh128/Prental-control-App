@@ -13,7 +13,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import ThemedText from '@/_components/ThemedText';
 import ThemedView from '@/_components/ThemedView';
-import { IconSymbol } from '@/_components/ui/IconSymbol';
+import { IconSymbol, IconSymbolName } from '@/_components/ui/IconSymbol';
 import Colors from '@/constants/Colors';
 import { db } from '../../../config/firebase';
 import { limitToLast, off, onValue, orderByChild, query, ref } from 'firebase/database';
@@ -24,7 +24,7 @@ type DeviceStat = {
   id: string;
   title: string;
   value: string;
-  icon: string;
+  icon: IconSymbolName;
   color: string;
 };
 
@@ -32,7 +32,7 @@ type MonitoringControl = {
   id: string;
   title: string;
   description: string;
-  icon: string;
+  icon: IconSymbolName;
 };
 
 const monitoringControls: MonitoringControl[] = [
@@ -166,11 +166,28 @@ export default function DeviceDetailsScreen() {
     const batteryPercent = batteryRaw <= 1 ? Math.round(batteryRaw * 100) : Math.round(batteryRaw);
 
     const appEntries = Object.values(screenTimeData || {}) as Array<{ duration?: number }>;
-    const totalScreenTimeMs = appEntries.reduce(
-      (acc, item) => acc + Number(item?.duration || 0),
+    const totalFromAppsMs = appEntries.reduce((acc, item) => acc + Number(item?.duration || 0), 0);
+    const appsUsedFromList = Object.keys(screenTimeData || {}).length;
+
+    const summaryUpdatedAt = Number(deviceData.usageLastUpdated || 0);
+    const mapLatestLastUsed = appEntries.reduce(
+      (latest, item: any) => Math.max(latest, Number(item?.lastUsed || 0)),
       0
     );
-    const appsUsed = Object.keys(screenTimeData || {}).length;
+    const useSummaryFallback =
+      Number(deviceData.screenTimeToday || 0) > 0 && summaryUpdatedAt > mapLatestLastUsed;
+
+    const totalScreenTimeMs = useSummaryFallback
+      ? Number(deviceData.screenTimeToday || 0)
+      : totalFromAppsMs > 0
+        ? totalFromAppsMs
+        : Number(deviceData.screenTimeToday || 0);
+
+    const appsUsed = useSummaryFallback
+      ? Number(deviceData.appsUsedToday || 0)
+      : appsUsedFromList > 0
+        ? appsUsedFromList
+        : Number(deviceData.appsUsedToday || 0);
 
     const storageUsedValue =
       typeof deviceData.storageUsed === 'number'
@@ -245,13 +262,16 @@ export default function DeviceDetailsScreen() {
 
   return (
     <ThemedView style={styles.container}>
+      <View style={styles.bgOrbTop} />
+      <View style={styles.bgOrbBottom} />
+
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.light.tint} />
           <ThemedText style={styles.loadingText}>Loading real device metrics...</ThemedText>
         </View>
       ) : (
-        <ScrollView style={styles.scrollView}>
+        <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
           <View style={styles.statsGrid}>
             {deviceStats.map((stat) => (
               <View key={stat.id} style={styles.statCard}>
@@ -302,9 +322,31 @@ export default function DeviceDetailsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#0A1B35',
+  },
+  bgOrbTop: {
+    position: 'absolute',
+    width: 250,
+    height: 250,
+    borderRadius: 125,
+    backgroundColor: 'rgba(61,181,255,0.24)',
+    top: -90,
+    right: -70,
+  },
+  bgOrbBottom: {
+    position: 'absolute',
+    width: 260,
+    height: 260,
+    borderRadius: 130,
+    backgroundColor: 'rgba(126,119,255,0.2)',
+    bottom: -110,
+    left: -70,
   },
   scrollView: {
     flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 24,
   },
   loadingContainer: {
     flex: 1,
@@ -313,7 +355,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   loadingText: {
-    color: '#666',
+    color: '#C2D5F2',
   },
   statsGrid: {
     flexDirection: 'row',
@@ -323,14 +365,14 @@ const styles = StyleSheet.create({
   },
   statCard: {
     width: '47%',
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    backgroundColor: '#F4F7FD',
+    borderRadius: 16,
     padding: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    elevation: 4,
   },
   iconContainer: {
     width: 40,
@@ -353,6 +395,7 @@ const styles = StyleSheet.create({
     marginTop: 24,
     marginBottom: 16,
     marginHorizontal: 16,
+    color: '#E8F2FF',
   },
   mapButton: {
     marginHorizontal: 16,
@@ -377,14 +420,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    marginHorizontal: 16,
+    marginBottom: 10,
+    backgroundColor: '#F4F7FD',
+    borderRadius: 14,
   },
   controlIcon: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#E6ECF7',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
