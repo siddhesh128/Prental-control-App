@@ -57,19 +57,40 @@ class UsageStatsModule(private val reactContext: ReactApplicationContext) :
       }
       val startOfDay = calendar.timeInMillis
 
-      val stats = usageStatsManager.queryUsageStats(
-        UsageStatsManager.INTERVAL_BEST,
-        startOfDay,
-        now
-      )
-
+      // Use aggregated usage for the current day. This is more reliable than INTERVAL_BEST.
+      val aggregated = usageStatsManager.queryAndAggregateUsageStats(startOfDay, now)
       val usageByPackage = HashMap<String, Pair<Long, Long>>()
-      stats.forEach { usage ->
-        if (usage.totalTimeInForeground <= 0L) return@forEach
-        val current = usageByPackage[usage.packageName]
-        val totalDuration = (current?.first ?: 0L) + usage.totalTimeInForeground
+
+      aggregated.forEach { (packageName, usage) ->
+        val duration = usage.totalTimeInForeground
+        if (duration <= 0L) return@forEach
+        if (packageName == reactContext.packageName) return@forEach
+
+        val current = usageByPackage[packageName]
+        val totalDuration = (current?.first ?: 0L) + duration
         val lastUsed = maxOf(current?.second ?: 0L, usage.lastTimeUsed)
-        usageByPackage[usage.packageName] = Pair(totalDuration, lastUsed)
+        usageByPackage[packageName] = Pair(totalDuration, lastUsed)
+      }
+
+      // Fallback for devices that return empty aggregation despite granted permission.
+      if (usageByPackage.isEmpty()) {
+        val stats = usageStatsManager.queryUsageStats(
+          UsageStatsManager.INTERVAL_DAILY,
+          startOfDay,
+          now
+        )
+
+        stats.forEach { usage ->
+          val duration = usage.totalTimeInForeground
+          val packageName = usage.packageName
+          if (duration <= 0L) return@forEach
+          if (packageName == reactContext.packageName) return@forEach
+
+          val current = usageByPackage[packageName]
+          val totalDuration = (current?.first ?: 0L) + duration
+          val lastUsed = maxOf(current?.second ?: 0L, usage.lastTimeUsed)
+          usageByPackage[packageName] = Pair(totalDuration, lastUsed)
+        }
       }
 
       val result = Arguments.createMap()
