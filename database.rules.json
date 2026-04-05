@@ -35,13 +35,15 @@
     "callHistory": {
       "$userId": {
         ".read": "auth != null",
-        ".write": "auth != null"
+        ".write": "auth != null",
+        ".indexOn": ["timestamp"]
       }
     },
     "messageHistory": {
       "$userId": {
         ".read": "auth != null",
-        ".write": "auth != null"
+        ".write": "auth != null",
+        ".indexOn": ["timestamp"]
       }
     }
   }

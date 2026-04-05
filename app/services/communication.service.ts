@@ -53,10 +53,17 @@ export class CommunicationService {
 
   static async logMessageRecord(userId: string, record: MessageRecord): Promise<void> {
     try {
-      await push(dbRef(db, `messageHistory/${userId}`), {
+      const messageRecord = {
         ...record,
         timestamp: record.timestamp || Date.now(),
-      });
+      };
+
+      if (record.id) {
+        await set(dbRef(db, `messageHistory/${userId}/${record.id}`), messageRecord);
+        return;
+      }
+
+      await push(dbRef(db, `messageHistory/${userId}`), messageRecord);
     } catch (error) {
       console.error('Error logging message record:', error);
       throw error;

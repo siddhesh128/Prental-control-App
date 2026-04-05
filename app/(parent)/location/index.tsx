@@ -1,31 +1,135 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, ActivityIndicator, Dimensions } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  StyleSheet,
+  View,
+  ActivityIndicator,
+  Dimensions,
+  ScrollView,
+  RefreshControl,
+} from 'react-native';
 import { Stack } from 'expo-router';
+import { getAuth } from 'firebase/auth';
 import ThemedView from '@/_components/ThemedView';
 import ThemedText from '@/_components/ThemedText';
 import Colors from '@/constants/Colors';
-import DeviceManagementService, { ChildDevice } from '@/services/device-management.service';
+import PairingService from '@/services/pairing.service';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import { limitToLast, off, onValue, orderByChild, query, ref } from 'firebase/database';
+import { db } from '../../config/firebase';
+
+type ChildLocationDevice = {
+  id: string;
+  name: string;
+  location?: {
+    latitude: number;
+    longitude: number;
+    timestamp: number;
+  };
+};
 
 export default function LocationTrackingScreen() {
-  const [devices, setDevices] = useState<ChildDevice[]>([]);
+  const [devices, setDevices] = useState<ChildLocationDevice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const unsubsRef = useRef<Array<() => void>>([]);
 
   useEffect(() => {
+    let mounted = true;
+
+    const loadDevices = async () => {
+      try {
+        setLoading(true);
+        const uid = getAuth().currentUser?.uid;
+
+        if (!uid) {
+          setDevices([]);
+          return;
+        }
+
+        const pairings = await PairingService.getParentPairings(uid);
+        if (!mounted) {
+          return;
+        }
+
+        const baseDevices: ChildLocationDevice[] = pairings.map((pairing) => ({
+          id: pairing.childId,
+          name: pairing.childDeviceName || 'Child Device',
+        }));
+        setDevices(baseDevices);
+
+        unsubsRef.current.forEach((unsubscribe) => unsubscribe());
+        unsubsRef.current = [];
+
+        baseDevices.forEach((device) => {
+          const locationQuery = query(
+            ref(db, `locations/${device.id}`),
+            orderByChild('timestamp'),
+            limitToLast(1)
+          );
+
+          const unsubscribe = onValue(locationQuery, (snapshot) => {
+            const locationMap = snapshot.val() || {};
+            const latest = Object.values(locationMap)[0] as
+              | { latitude?: number; longitude?: number; timestamp?: number }
+              | undefined;
+
+            setDevices((current) =>
+              current.map((item) =>
+                item.id !== device.id
+                  ? item
+                  : {
+                      ...item,
+                      location:
+                        latest?.latitude != null && latest?.longitude != null
+                          ? {
+                              latitude: Number(latest.latitude),
+                              longitude: Number(latest.longitude),
+                              timestamp: Number(latest.timestamp || Date.now()),
+                            }
+                          : undefined,
+                    }
+              )
+            );
+          });
+
+          unsubsRef.current.push(() => off(locationQuery, 'value', unsubscribe));
+        });
+      } catch (error) {
+        console.error('Error loading devices:', error);
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
     loadDevices();
+
+    return () => {
+      mounted = false;
+      unsubsRef.current.forEach((unsubscribe) => unsubscribe());
+      unsubsRef.current = [];
+    };
   }, []);
 
-  const loadDevices = async () => {
-    try {
-      setLoading(true);
-      const deviceList = await DeviceManagementService.getChildDevices();
-      setDevices(deviceList.filter((device) => device.location));
-    } catch (error) {
-      console.error('Error loading devices:', error);
-    } finally {
-      setLoading(false);
+  const onRefresh = async () => {
+    setRefreshing(true);
+    const uid = getAuth().currentUser?.uid;
+
+    if (uid) {
+      const pairings = await PairingService.getParentPairings(uid);
+      setDevices(
+        pairings.map((pairing) => ({
+          id: pairing.childId,
+          name: pairing.childDeviceName || 'Child Device',
+        }))
+      );
     }
+
+    setRefreshing(false);
   };
+
+  const devicesWithLocation = useMemo(() => devices.filter((device) => device.location), [devices]);
 
   if (loading) {
     return (
@@ -46,7 +150,7 @@ export default function LocationTrackingScreen() {
         }}
       />
 
-      {devices.length === 0 ? (
+      {devicesWithLocation.length === 0 ? (
         <View style={styles.emptyState}>
           <ThemedText style={styles.emptyStateTitle}>No Location Data</ThemedText>
           <ThemedText style={styles.emptyStateText}>
@@ -59,13 +163,13 @@ export default function LocationTrackingScreen() {
             provider={PROVIDER_GOOGLE}
             style={styles.map}
             initialRegion={{
-              latitude: devices[0].location?.latitude || 0,
-              longitude: devices[0].location?.longitude || 0,
+              latitude: devicesWithLocation[0].location?.latitude || 0,
+              longitude: devicesWithLocation[0].location?.longitude || 0,
               latitudeDelta: 0.0922,
               longitudeDelta: 0.0421,
             }}
           >
-            {devices.map(
+            {devicesWithLocation.map(
               (device) =>
                 device.location && (
                   <Marker
@@ -83,7 +187,10 @@ export default function LocationTrackingScreen() {
         </View>
       )}
 
-      <View style={styles.deviceList}>
+      <ScrollView
+        style={styles.deviceList}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
         {devices.map((device) => (
           <View key={device.id} style={styles.deviceItem}>
             <View>
@@ -98,7 +205,7 @@ export default function LocationTrackingScreen() {
             </View>
           </View>
         ))}
-      </View>
+      </ScrollView>
     </ThemedView>
   );
 }

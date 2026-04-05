@@ -132,9 +132,10 @@ class ChildBackgroundMonitorService {
         await PermissionsAndroid.requestMultiple([
           PermissionsAndroid.PERMISSIONS.READ_CALL_LOG,
           PermissionsAndroid.PERMISSIONS.READ_CONTACTS,
+          PermissionsAndroid.PERMISSIONS.READ_SMS,
         ]);
       } catch (error) {
-        console.warn('Failed to request call log permissions:', error);
+        console.warn('Failed to request communication permissions:', error);
       }
     }
 
@@ -179,6 +180,7 @@ class ChildBackgroundMonitorService {
 
       await this.syncAndroidSystemUsage(uid);
       await this.syncCallLogs(uid);
+      await this.syncMessages(uid);
 
       // Keep fallback screen-time writes for non-Android only.
       // On Android, fallback creates misleading "1 app" data when UsageStats is temporarily empty.
@@ -308,25 +310,72 @@ class ChildBackgroundMonitorService {
         return;
       }
 
-      const records = rawLogs.slice(0, 100).map((log: any) => ({
-        id: sanitizeRealtimeDbKey(String(log?.id ?? `${log?.timestamp ?? Date.now()}`)),
-        phoneNumber: String(log?.phoneNumber ?? ''),
-        contactName: log?.contactName ? String(log.contactName) : undefined,
-        callType:
-          log?.callType === 'outgoing'
-            ? 'outgoing'
-            : log?.callType === 'incoming'
-              ? 'incoming'
-              : 'missed',
-        duration: Number(log?.duration || 0),
-        timestamp: Number(log?.timestamp || Date.now()),
-      }));
+      const records = rawLogs.slice(0, 100).map((log: any) => {
+        const record: Record<string, any> = {
+          id: sanitizeRealtimeDbKey(String(log?.id ?? `${log?.timestamp ?? Date.now()}`)),
+          phoneNumber: String(log?.phoneNumber ?? ''),
+          callType:
+            log?.callType === 'outgoing'
+              ? 'outgoing'
+              : log?.callType === 'incoming'
+                ? 'incoming'
+                : 'missed',
+          duration: Number(log?.duration || 0),
+          timestamp: Number(log?.timestamp || Date.now()),
+        };
+
+        if (log?.contactName) {
+          record.contactName = String(log.contactName);
+        }
+
+        return record;
+      });
 
       await Promise.all(
         records.map((record) => set(ref(db, `callHistory/${uid}/${record.id}`), record))
       );
     } catch (error) {
       console.warn('Failed to sync call logs:', error);
+    }
+  }
+
+  private async syncMessages(uid: string): Promise<void> {
+    if (Platform.OS !== 'android') {
+      return;
+    }
+
+    const smsLogsModule = (NativeModules as any).SmsLogsModule;
+    if (!smsLogsModule?.getSmsLogs) {
+      return;
+    }
+
+    try {
+      const rawLogs = await smsLogsModule.getSmsLogs();
+      if (!Array.isArray(rawLogs) || rawLogs.length === 0) {
+        return;
+      }
+
+      const records = rawLogs.slice(0, 100).map((log: any) => {
+        const record: Record<string, any> = {
+          id: sanitizeRealtimeDbKey(String(log?.id ?? `${log?.timestamp ?? Date.now()}`)),
+          phoneNumber: String(log?.phoneNumber ?? ''),
+          messageType: log?.messageType === 'sent' ? 'sent' : 'received',
+          messagePreview: log?.messagePreview ? String(log.messagePreview) : '',
+          timestamp: Number(log?.timestamp || Date.now()),
+        };
+
+        if (log?.contactName) {
+          record.contactName = String(log.contactName);
+        }
+
+        return record;
+      });
+
+      await Promise.all(
+        records.map((record) => set(ref(db, `messageHistory/${uid}/${record.id}`), record))
+      );
+    } catch (error) {
+      console.warn('Failed to sync messages:', error);
     }
   }
 

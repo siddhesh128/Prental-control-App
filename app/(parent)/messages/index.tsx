@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   StyleSheet,
   ScrollView,
@@ -6,13 +6,16 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { Stack } from 'expo-router';
+import { getAuth } from 'firebase/auth';
 import ThemedText from '@/_components/ThemedText';
 import ThemedView from '@/_components/ThemedView';
 import { IconSymbol } from '@/_components/ui/IconSymbol';
 import Colors from '@/constants/Colors';
-import DeviceManagementService from '@/services/device-management.service';
+import PairingService from '@/services/pairing.service';
+import { CommunicationService } from '@/services/communication.service';
 
 export type MessageEntry = {
   id: string;
@@ -27,82 +30,123 @@ export type MessageEntry = {
   deviceId: string;
 };
 
-// Mock data for demonstration
-const mockMessages: MessageEntry[] = [
-  {
-    id: '1',
-    type: 'received',
-    contact: {
-      name: 'Mom',
-      number: '+1234567890',
-    },
-    content: 'How was school today?',
-    timestamp: new Date().toISOString(),
-    isBlocked: false,
-    deviceId: '1',
-  },
-  {
-    id: '2',
-    type: 'sent',
-    contact: {
-      name: 'Mom',
-      number: '+1234567890',
-    },
-    content: 'It was great! Got an A on my math test.',
-    timestamp: new Date(Date.now() - 300000).toISOString(),
-    isBlocked: false,
-    deviceId: '1',
-  },
-  {
-    id: '3',
-    type: 'received',
-    contact: {
-      name: 'Unknown',
-      number: '+0987654321',
-    },
-    content: 'Hey, check out this cool website!',
-    timestamp: new Date(Date.now() - 3600000).toISOString(),
-    isBlocked: true,
-    deviceId: '1',
-  },
-];
-
 export default function MessagesScreen() {
-  const [messages, setMessages] = useState<MessageEntry[]>(mockMessages);
+  const [messages, setMessages] = useState<MessageEntry[]>([]);
   const [filter, setFilter] = useState<'all' | 'sent' | 'received' | 'blocked'>('all');
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [devices, setDevices] = useState<Record<string, string>>({});
+  const unsubscribersRef = useRef<Array<() => void>>([]);
 
   useEffect(() => {
+    let mounted = true;
+
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const uid = getAuth().currentUser?.uid;
+
+        if (!uid) {
+          setMessages([]);
+          setDevices({});
+          return;
+        }
+
+        const pairings = await PairingService.getParentPairings(uid);
+        if (!mounted) {
+          return;
+        }
+
+        const deviceMap = pairings.reduce(
+          (acc, pairing) => {
+            acc[pairing.childId] = pairing.childDeviceName || 'Child Device';
+            return acc;
+          },
+          {} as Record<string, string>
+        );
+        setDevices(deviceMap);
+
+        unsubscribersRef.current.forEach((unsubscribe) => unsubscribe());
+        unsubscribersRef.current = [];
+
+        const childMessagesByDevice: Record<string, MessageEntry[]> = {};
+
+        const updateMergedMessages = () => {
+          const merged = Object.values(childMessagesByDevice)
+            .flat()
+            .sort((a, b) => Number(b.timestamp) - Number(a.timestamp));
+          setMessages(merged);
+        };
+
+        pairings.forEach((pairing) => {
+          const unsubscribe = CommunicationService.subscribeToMessageHistory(
+            pairing.childId,
+            (records) => {
+              childMessagesByDevice[pairing.childId] = records.map((record) => ({
+                id: record.id || `${pairing.childId}-${record.timestamp}`,
+                type: record.messageType,
+                contact: {
+                  name: record.contactName || 'Unknown',
+                  number: record.phoneNumber,
+                },
+                content: record.messagePreview || '(no preview)',
+                timestamp: new Date(record.timestamp).toISOString(),
+                isBlocked: false,
+                deviceId: pairing.childId,
+              }));
+              updateMergedMessages();
+            }
+          );
+
+          unsubscribersRef.current.push(unsubscribe);
+        });
+      } catch (error) {
+        console.error('Error loading messages:', error);
+        Alert.alert('Error', 'Failed to load messages');
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
     loadData();
+
+    return () => {
+      mounted = false;
+      unsubscribersRef.current.forEach((unsubscribe) => unsubscribe());
+      unsubscribersRef.current = [];
+    };
   }, []);
 
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      // Load devices to map device IDs to names
-      const deviceList = await DeviceManagementService.getChildDevices();
-      const deviceMap = deviceList.reduce(
-        (acc, device) => {
-          acc[device.id] = device.name;
-          return acc;
-        },
-        {} as Record<string, string>
+  const onRefresh = async () => {
+    setRefreshing(true);
+    const uid = getAuth().currentUser?.uid;
+
+    if (uid) {
+      const pairings = await PairingService.getParentPairings(uid);
+      const refreshed = await Promise.all(
+        pairings.map(async (pairing) => {
+          const records = await CommunicationService.getMessageHistory(pairing.childId);
+          return records.map((record) => ({
+            id: record.id || `${pairing.childId}-${record.timestamp}`,
+            type: record.messageType,
+            contact: {
+              name: record.contactName || 'Unknown',
+              number: record.phoneNumber,
+            },
+            content: record.messagePreview || '(no preview)',
+            timestamp: new Date(record.timestamp).toISOString(),
+            isBlocked: false,
+            deviceId: pairing.childId,
+          }));
+        })
       );
-      setDevices(deviceMap);
 
-      // In a real implementation, we would load actual messages here
-      // const msgs = await MessagesService.getMessages();
-      // setMessages(msgs);
-
-      // Using mock data for now
-      setMessages(mockMessages);
-    } catch (error) {
-      console.error('Error loading data:', error);
-      Alert.alert('Error', 'Failed to load messages');
-    } finally {
-      setLoading(false);
+      setMessages(refreshed.flat().sort((a, b) => Number(b.timestamp) - Number(a.timestamp)));
     }
+
+    setRefreshing(false);
   };
 
   const handleToggleBlocked = async (messageId: string) => {
@@ -135,6 +179,8 @@ export default function MessagesScreen() {
     }
   };
 
+  const filteredMessages = useMemo(() => getFilteredMessages(), [messages, filter]);
+
   if (loading) {
     return (
       <ThemedView style={[styles.container, styles.centerContent]}>
@@ -142,8 +188,6 @@ export default function MessagesScreen() {
       </ThemedView>
     );
   }
-
-  const filteredMessages = getFilteredMessages();
 
   return (
     <ThemedView style={styles.container}>
@@ -172,7 +216,10 @@ export default function MessagesScreen() {
         ))}
       </View>
 
-      <ScrollView style={styles.content}>
+      <ScrollView
+        style={styles.content}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
         {filteredMessages.length === 0 ? (
           <View style={styles.emptyState}>
             <IconSymbol name="message" size={64} color={Colors.light.tint} />
@@ -270,14 +317,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   filterButtonActive: {
-    backgroundColor: Colors.light.primary + '10',
+    backgroundColor: Colors.light.tint + '10',
   },
   filterButtonText: {
     fontSize: 14,
     color: '#666',
   },
   filterButtonTextActive: {
-    color: Colors.light.primary,
+    color: Colors.light.tint,
     fontWeight: '600',
   },
   messageCard: {
@@ -318,7 +365,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
-    backgroundColor: Colors.light.primary + '10',
+    backgroundColor: Colors.light.tint + '10',
   },
   unblockButton: {
     backgroundColor: '#ff3b3010',
@@ -326,7 +373,7 @@ const styles = StyleSheet.create({
   blockButtonText: {
     fontSize: 12,
     marginLeft: 4,
-    color: Colors.light.primary,
+    color: Colors.light.tint,
     fontWeight: '500',
   },
   unblockButtonText: {
@@ -342,7 +389,7 @@ const styles = StyleSheet.create({
   },
   sentBubble: {
     alignSelf: 'flex-end',
-    backgroundColor: Colors.light.primary,
+    backgroundColor: Colors.light.tint,
     borderBottomRightRadius: 4,
   },
   receivedBubble: {
@@ -370,7 +417,7 @@ const styles = StyleSheet.create({
   },
   deviceName: {
     fontSize: 12,
-    color: Colors.light.primary,
+    color: Colors.light.tint,
   },
   emptyState: {
     flex: 1,
