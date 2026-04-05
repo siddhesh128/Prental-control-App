@@ -11,6 +11,7 @@ module.exports = {
       bundleIdentifier: 'com.parentalcontrol.app',
       googleServicesFile: './GoogleService-Info.plist',
       config: {
+        googleMapsApiKey: process.env.GOOGLE_MAPS_IOS_API_KEY,
         googleSignIn: {
           reservedClientId: process.env.GOOGLE_IOS_CLIENT_ID,
         },
@@ -19,6 +20,11 @@ module.exports = {
     android: {
       package: 'com.parentalcontrol.app',
       googleServicesFile: './google-services.json',
+      config: {
+        googleMaps: {
+          apiKey: process.env.GOOGLE_MAPS_ANDROID_API_KEY,
+        },
+      },
       permissions: [
         'INTERNET',
         'READ_CALL_LOG',
