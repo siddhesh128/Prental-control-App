@@ -1,11 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, ScrollView, View, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  StyleSheet,
+  ScrollView,
+  View,
+  TouchableOpacity,
+  ActivityIndicator,
+  RefreshControl,
+} from 'react-native';
 import { Stack } from 'expo-router';
+import { getAuth } from 'firebase/auth';
 import ThemedText from '@/_components/ThemedText';
 import ThemedView from '@/_components/ThemedView';
 import { IconSymbol } from '@/_components/ui/IconSymbol';
 import Colors from '@/constants/Colors';
-import DeviceManagementService from '@/services/device-management.service';
+import PairingService from '@/services/pairing.service';
+import { CommunicationService } from '@/services/communication.service';
 
 export type CallLogEntry = {
   id: string;
@@ -17,68 +26,116 @@ export type CallLogEntry = {
   deviceId: string;
 };
 
-const mockCallLogs: CallLogEntry[] = [
-  {
-    id: '1',
-    name: 'Mom',
-    number: '+1234567890',
-    type: 'incoming',
-    duration: 120,
-    timestamp: new Date().toISOString(),
-    deviceId: '1',
-  },
-  {
-    id: '2',
-    name: 'Unknown',
-    number: '+0987654321',
-    type: 'missed',
-    duration: 0,
-    timestamp: new Date(Date.now() - 3600000).toISOString(),
-    deviceId: '1',
-  },
-  {
-    id: '3',
-    name: 'Friend',
-    number: '+1122334455',
-    type: 'outgoing',
-    duration: 300,
-    timestamp: new Date(Date.now() - 7200000).toISOString(),
-    deviceId: '1',
-  },
-];
-
 export default function CallLogsScreen() {
-  const [calls, setCalls] = useState<CallLogEntry[]>(mockCallLogs);
+  const [calls, setCalls] = useState<CallLogEntry[]>([]);
   const [filter, setFilter] = useState<'all' | 'incoming' | 'outgoing' | 'missed'>('all');
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [devices, setDevices] = useState<Record<string, string>>({});
+  const unsubscribersRef = useRef<Array<() => void>>([]);
 
   useEffect(() => {
+    let mounted = true;
+
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const uid = getAuth().currentUser?.uid;
+
+        if (!uid) {
+          setCalls([]);
+          setDevices({});
+          return;
+        }
+
+        const pairings = await PairingService.getParentPairings(uid);
+        if (!mounted) {
+          return;
+        }
+
+        const deviceMap = pairings.reduce(
+          (acc, pairing) => {
+            acc[pairing.childId] = pairing.childDeviceName || 'Child Device';
+            return acc;
+          },
+          {} as Record<string, string>
+        );
+        setDevices(deviceMap);
+
+        unsubscribersRef.current.forEach((unsubscribe) => unsubscribe());
+        unsubscribersRef.current = [];
+
+        const childLogsByDevice: Record<string, CallLogEntry[]> = {};
+
+        const updateMergedCalls = () => {
+          const merged = Object.values(childLogsByDevice)
+            .flat()
+            .sort((a, b) => Number(b.timestamp) - Number(a.timestamp));
+          setCalls(merged);
+        };
+
+        pairings.forEach((pairing) => {
+          const unsubscribe = CommunicationService.subscribeToCallHistory(
+            pairing.childId,
+            (records) => {
+              childLogsByDevice[pairing.childId] = records.map((record) => ({
+                id: record.id || `${pairing.childId}-${record.timestamp}`,
+                name: record.contactName || 'Unknown',
+                number: record.phoneNumber,
+                type: record.callType,
+                duration: record.duration,
+                timestamp: new Date(record.timestamp).toISOString(),
+                deviceId: pairing.childId,
+              }));
+              updateMergedCalls();
+            }
+          );
+
+          unsubscribersRef.current.push(unsubscribe);
+        });
+      } catch (error) {
+        console.error('Error loading call logs:', error);
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
     loadData();
+
+    return () => {
+      mounted = false;
+      unsubscribersRef.current.forEach((unsubscribe) => unsubscribe());
+      unsubscribersRef.current = [];
+    };
   }, []);
 
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      // Load devices to map device IDs to names
-      const deviceList = await DeviceManagementService.getChildDevices();
-      const deviceMap = deviceList.reduce((acc, device) => {
-        acc[device.id] = device.name;
-        return acc;
-      }, {} as Record<string, string>);
-      setDevices(deviceMap);
+  const onRefresh = async () => {
+    setRefreshing(true);
+    const uid = getAuth().currentUser?.uid;
 
-      // In a real implementation, we would load actual call logs here
-      // const logs = await CallLogsService.getLogs();
-      // setCalls(logs);
-      
-      // Using mock data for now
-      setCalls(mockCallLogs);
-    } catch (error) {
-      console.error('Error loading data:', error);
-    } finally {
-      setLoading(false);
+    if (uid) {
+      const pairings = await PairingService.getParentPairings(uid);
+      const refreshedCalls = await Promise.all(
+        pairings.map(async (pairing) => {
+          const records = await CommunicationService.getCallHistory(pairing.childId);
+          return records.map((record) => ({
+            id: record.id || `${pairing.childId}-${record.timestamp}`,
+            name: record.contactName || 'Unknown',
+            number: record.phoneNumber,
+            type: record.callType,
+            duration: record.duration,
+            timestamp: new Date(record.timestamp).toISOString(),
+            deviceId: pairing.childId,
+          }));
+        })
+      );
+
+      setCalls(refreshedCalls.flat().sort((a, b) => Number(b.timestamp) - Number(a.timestamp)));
     }
+
+    setRefreshing(false);
   };
 
   const getCallIcon = (type: CallLogEntry['type']) => {
@@ -99,7 +156,7 @@ export default function CallLogsScreen() {
       case 'incoming':
         return '#34c759';
       case 'outgoing':
-        return Colors.light.primary;
+        return Colors.light.tint;
       case 'missed':
         return '#ff3b30';
       default:
@@ -114,14 +171,15 @@ export default function CallLogsScreen() {
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
-  const filteredCalls = calls.filter(
-    (call) => filter === 'all' || call.type === filter
+  const filteredCalls = useMemo(
+    () => calls.filter((call) => filter === 'all' || call.type === filter),
+    [calls, filter]
   );
 
   if (loading) {
     return (
       <ThemedView style={[styles.container, styles.centerContent]}>
-        <ActivityIndicator size="large" color={Colors.light.primary} />
+        <ActivityIndicator size="large" color={Colors.light.tint} />
       </ThemedView>
     );
   }
@@ -145,10 +203,7 @@ export default function CallLogsScreen() {
             onPress={() => setFilter(type)}
           >
             <ThemedText
-              style={[
-                styles.filterButtonText,
-                filter === type && styles.filterButtonTextActive,
-              ]}
+              style={[styles.filterButtonText, filter === type && styles.filterButtonTextActive]}
             >
               {type.charAt(0).toUpperCase() + type.slice(1)}
             </ThemedText>
@@ -156,10 +211,13 @@ export default function CallLogsScreen() {
         ))}
       </View>
 
-      <ScrollView style={styles.content}>
+      <ScrollView
+        style={styles.content}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
         {filteredCalls.length === 0 ? (
           <View style={styles.emptyState}>
-            <IconSymbol name="phone" size={64} color={Colors.light.primary} />
+            <IconSymbol name="phone" size={64} color={Colors.light.tint} />
             <ThemedText style={styles.emptyStateTitle}>No Call Logs</ThemedText>
             <ThemedText style={styles.emptyStateText}>
               There are no call logs matching your filter
@@ -225,14 +283,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   filterButtonActive: {
-    backgroundColor: Colors.light.primary + '10',
+    backgroundColor: Colors.light.tint + '10',
   },
   filterButtonText: {
     fontSize: 14,
     color: '#666',
   },
   filterButtonTextActive: {
-    color: Colors.light.primary,
+    color: Colors.light.tint,
     fontWeight: '600',
   },
   callItem: {
@@ -279,7 +337,7 @@ const styles = StyleSheet.create({
   },
   deviceName: {
     fontSize: 12,
-    color: Colors.light.primary,
+    color: Colors.light.tint,
   },
   emptyState: {
     flex: 1,

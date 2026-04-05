@@ -18,9 +18,11 @@ module.exports = {
     },
     android: {
       package: 'com.parentalcontrol.app',
-      googleServicesFile: './android/app/google-services.json',
+      googleServicesFile: './google-services.json',
       permissions: [
         'INTERNET',
+        'READ_CALL_LOG',
+        'READ_CONTACTS',
         'ACCESS_COARSE_LOCATION',
         'ACCESS_FINE_LOCATION',
         'ACCESS_BACKGROUND_LOCATION',

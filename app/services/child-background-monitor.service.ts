@@ -1,4 +1,10 @@
-import { AppState, AppStateStatus, NativeModules, Platform } from 'react-native';
+import {
+  AppState,
+  AppStateStatus,
+  NativeModules,
+  PermissionsAndroid,
+  Platform,
+} from 'react-native';
 import BackgroundTimer from 'react-native-background-timer';
 import * as Battery from 'expo-battery';
 import * as Location from 'expo-location';
@@ -121,6 +127,17 @@ class ChildBackgroundMonitorService {
   }
 
   private async requestPermissions() {
+    if (Platform.OS === 'android') {
+      try {
+        await PermissionsAndroid.requestMultiple([
+          PermissionsAndroid.PERMISSIONS.READ_CALL_LOG,
+          PermissionsAndroid.PERMISSIONS.READ_CONTACTS,
+        ]);
+      } catch (error) {
+        console.warn('Failed to request call log permissions:', error);
+      }
+    }
+
     const foreground = await Location.getForegroundPermissionsAsync();
     if (foreground.status !== 'granted') {
       await Location.requestForegroundPermissionsAsync();
@@ -161,6 +178,7 @@ class ChildBackgroundMonitorService {
       });
 
       await this.syncAndroidSystemUsage(uid);
+      await this.syncCallLogs(uid);
 
       // Keep fallback screen-time writes for non-Android only.
       // On Android, fallback creates misleading "1 app" data when UsageStats is temporarily empty.
@@ -272,6 +290,44 @@ class ChildBackgroundMonitorService {
     });
 
     return accessGranted || usageValues.length > 0;
+  }
+
+  private async syncCallLogs(uid: string): Promise<void> {
+    if (Platform.OS !== 'android') {
+      return;
+    }
+
+    const callLogsModule = (NativeModules as any).CallLogsModule;
+    if (!callLogsModule?.getCallLogs) {
+      return;
+    }
+
+    try {
+      const rawLogs = await callLogsModule.getCallLogs();
+      if (!Array.isArray(rawLogs) || rawLogs.length === 0) {
+        return;
+      }
+
+      const records = rawLogs.slice(0, 100).map((log: any) => ({
+        id: sanitizeRealtimeDbKey(String(log?.id ?? `${log?.timestamp ?? Date.now()}`)),
+        phoneNumber: String(log?.phoneNumber ?? ''),
+        contactName: log?.contactName ? String(log.contactName) : undefined,
+        callType:
+          log?.callType === 'outgoing'
+            ? 'outgoing'
+            : log?.callType === 'incoming'
+              ? 'incoming'
+              : 'missed',
+        duration: Number(log?.duration || 0),
+        timestamp: Number(log?.timestamp || Date.now()),
+      }));
+
+      await Promise.all(
+        records.map((record) => set(ref(db, `callHistory/${uid}/${record.id}`), record))
+      );
+    } catch (error) {
+      console.warn('Failed to sync call logs:', error);
+    }
   }
 
   private async getLocationForSync(): Promise<{ latitude: number; longitude: number } | null> {

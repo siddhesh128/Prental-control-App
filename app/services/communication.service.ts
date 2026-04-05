@@ -1,7 +1,20 @@
-import { ref, push, query, orderByChild, startAt, endAt, get, onValue, off } from 'firebase/database';
+import {
+  ref as dbRef,
+  push,
+  query as dbQuery,
+  orderByChild,
+  startAt,
+  endAt,
+  get,
+  onValue,
+  off,
+  remove,
+  set,
+} from 'firebase/database';
 import { db } from '../config/firebase';
 
 export interface CallRecord {
+  id?: string;
   phoneNumber: string;
   callType: 'incoming' | 'outgoing' | 'missed';
   duration: number;
@@ -10,6 +23,7 @@ export interface CallRecord {
 }
 
 export interface MessageRecord {
+  id?: string;
   phoneNumber: string;
   messageType: 'sent' | 'received';
   timestamp: number;
@@ -17,13 +31,20 @@ export interface MessageRecord {
   messagePreview?: string;
 }
 
-class CommunicationService {
+export class CommunicationService {
   static async logCallRecord(userId: string, record: CallRecord): Promise<void> {
     try {
-      await push(ref(db, `callHistory/${userId}`), {
+      const callRecord = {
         ...record,
         timestamp: record.timestamp || Date.now(),
-      });
+      };
+
+      if (record.id) {
+        await set(dbRef(db, `callHistory/${userId}/${record.id}`), callRecord);
+        return;
+      }
+
+      await push(dbRef(db, `callHistory/${userId}`), callRecord);
     } catch (error) {
       console.error('Error logging call record:', error);
       throw error;
@@ -32,7 +53,7 @@ class CommunicationService {
 
   static async logMessageRecord(userId: string, record: MessageRecord): Promise<void> {
     try {
-      await push(ref(db, `messageHistory/${userId}`), {
+      await push(dbRef(db, `messageHistory/${userId}`), {
         ...record,
         timestamp: record.timestamp || Date.now(),
       });
@@ -48,22 +69,21 @@ class CommunicationService {
     endTime?: number
   ): Promise<CallRecord[]> {
     try {
-      let query = query(ref(db, `callHistory/${userId}`), orderByChild('timestamp'));
-      
+      const queryConstraints: any[] = [orderByChild('timestamp')];
       if (startTime) {
-        query = query(startAt(startTime));
+        queryConstraints.push(startAt(startTime));
       }
       if (endTime) {
-        query = query(endAt(endTime));
+        queryConstraints.push(endAt(endTime));
       }
 
-      const snapshot = await get(query);
-      
+      const snapshot = await get(dbQuery(dbRef(db, `callHistory/${userId}`), ...queryConstraints));
+
       const calls: CallRecord[] = [];
       snapshot.forEach((child) => {
-        calls.push(child.val() as CallRecord);
+        calls.push({ id: child.key ?? undefined, ...(child.val() as CallRecord) });
       });
-      
+
       return calls.sort((a, b) => b.timestamp - a.timestamp);
     } catch (error) {
       console.error('Error fetching call history:', error);
@@ -77,22 +97,23 @@ class CommunicationService {
     endTime?: number
   ): Promise<MessageRecord[]> {
     try {
-      let query = query(ref(db, `messageHistory/${userId}`), orderByChild('timestamp'));
-      
+      const queryConstraints: any[] = [orderByChild('timestamp')];
       if (startTime) {
-        query = query(startAt(startTime));
+        queryConstraints.push(startAt(startTime));
       }
       if (endTime) {
-        query = query(endAt(endTime));
+        queryConstraints.push(endAt(endTime));
       }
 
-      const snapshot = await get(query);
-      
+      const snapshot = await get(
+        dbQuery(dbRef(db, `messageHistory/${userId}`), ...queryConstraints)
+      );
+
       const messages: MessageRecord[] = [];
       snapshot.forEach((child) => {
-        messages.push(child.val() as MessageRecord);
+        messages.push({ id: child.key ?? undefined, ...(child.val() as MessageRecord) });
       });
-      
+
       return messages.sort((a, b) => b.timestamp - a.timestamp);
     } catch (error) {
       console.error('Error fetching message history:', error);
@@ -104,39 +125,39 @@ class CommunicationService {
     userId: string,
     callback: (records: CallRecord[]) => void
   ): () => void {
-    const ref = ref(db, `callHistory/${userId}`);
-    
-    onValue(ref, (snapshot) => {
+    const callRef = dbRef(db, `callHistory/${userId}`);
+
+    onValue(callRef, (snapshot) => {
       const records: CallRecord[] = [];
       snapshot.forEach((child) => {
-        records.push(child.val() as CallRecord);
+        records.push({ id: child.key ?? undefined, ...(child.val() as CallRecord) });
       });
       callback(records.sort((a, b) => b.timestamp - a.timestamp));
     });
 
-    return () => off(ref);
+    return () => off(callRef);
   }
 
   static subscribeToMessageHistory(
     userId: string,
     callback: (records: MessageRecord[]) => void
   ): () => void {
-    const ref = ref(db, `messageHistory/${userId}`);
-    
-    onValue(ref, (snapshot) => {
+    const messageRef = dbRef(db, `messageHistory/${userId}`);
+
+    onValue(messageRef, (snapshot) => {
       const records: MessageRecord[] = [];
       snapshot.forEach((child) => {
-        records.push(child.val() as MessageRecord);
+        records.push({ id: child.key ?? undefined, ...(child.val() as MessageRecord) });
       });
       callback(records.sort((a, b) => b.timestamp - a.timestamp));
     });
 
-    return () => off(ref);
+    return () => off(messageRef);
   }
 
   static async deleteCallRecord(userId: string, recordId: string): Promise<void> {
     try {
-      await ref(db, `callHistory/${userId}/${recordId}`).remove();
+      await remove(dbRef(db, `callHistory/${userId}/${recordId}`));
     } catch (error) {
       console.error('Error deleting call record:', error);
       throw error;
@@ -145,7 +166,7 @@ class CommunicationService {
 
   static async deleteMessageRecord(userId: string, recordId: string): Promise<void> {
     try {
-      await ref(db, `messageHistory/${userId}/${recordId}`).remove();
+      await remove(dbRef(db, `messageHistory/${userId}/${recordId}`));
     } catch (error) {
       console.error('Error deleting message record:', error);
       throw error;
