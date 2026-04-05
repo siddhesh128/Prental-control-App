@@ -1,4 +1,6 @@
-# Complete Pairing Flow Testing Guide
+# Pairing Flow Testing Guide
+
+Use this guide to verify the QR pairing flow end to end in emulator or on device.
 
 ## Prerequisites
 
@@ -17,9 +19,9 @@
    - Parent account (email: `parent@test.com`, password: `test123456`)
    - Child account (email: `child@test.com`, password: `test123456`)
 
-## Step 1: Setup Test Accounts
+## Step 1: Create test accounts
 
-### Create Parent Account
+### Parent account
 
 1. Open app on first device/emulator
 2. Go to Register screen
@@ -31,7 +33,7 @@
 5. Verify email (or skip if using emulator)
 6. Login with parent credentials
 
-### Create Child Account
+### Child account
 
 1. Open app on second device/emulator
 2. Go to Register screen
@@ -43,9 +45,9 @@
 5. Verify email (or skip if using emulator)
 6. Login with child credentials
 
-## Step 2: Generate Pairing Code (Parent Side)
+## Step 2: Generate a pairing code
 
-### On Parent Device
+### On the parent device
 
 1. Go to navigation menu → "Add Device"
 2. You should see:
@@ -56,7 +58,7 @@
 3. **Verify the timer is counting down** - this confirms backend is working
 4. Note the time remaining
 
-## Step 3: Validate Token (Optional - Real-time Feedback)
+## Step 3: Validate the token
 
 This step verifies the `validatePairingToken` function is working.
 
@@ -74,7 +76,7 @@ The child app can call validation in real-time. In production, this happens auto
    - `expiresAt: <timestamp 5 min from now>`
    - `createdAt: <current timestamp>`
 
-## Step 4: Scan QR Code (Child Side)
+## Step 4: Scan the QR code
 
 ### On Child Device
 
@@ -97,7 +99,7 @@ The child app can call validation in real-time. In production, this happens auto
   - Token (first 8 chars visible)
   - Time remaining
 
-## Step 5: Confirm Pairing
+## Step 5: Confirm pairing
 
 ### On Child Device
 
@@ -107,7 +109,7 @@ The child app can call validation in real-time. In production, this happens auto
 4. Tap "Go to Dashboard" button
 5. Should navigate to child home screen
 
-### Backend Verification (Check Firestore)
+### Backend verification
 
 **1. Check pairingSessions collection:**
 
@@ -155,7 +157,7 @@ The child app can call validation in real-time. In production, this happens auto
   }
   ```
 
-## Step 6: Verify Parent Side
+## Step 6: Verify the parent side
 
 ### On Parent Device
 
@@ -166,7 +168,7 @@ The child app can call validation in real-time. In production, this happens auto
    - Status: "Connected"
    - Pairing date
 
-## Step 7: Test Edge Cases
+## Step 7: Test edge cases
 
 ### Test 1: Token Expiration
 
@@ -217,7 +219,7 @@ The child app can call validation in real-time. In production, this happens auto
 6. Should show error: "Network error" or "Unable to connect"
 7. Turn internet back on and retry - should work
 
-## Testing Checklist
+## Testing checklist
 
 - [ ] Parent account created and logged in
 - [ ] Child account created and logged in
@@ -283,7 +285,7 @@ console.log('Decoded data:', decodedData);
 
 Check app logs to see what QR data was generated and scanned.
 
-## Performance Metrics
+## Performance metrics
 
 Expected timings:
 
@@ -298,7 +300,7 @@ If significantly slower:
 2. Check Firestore indexes
 3. Monitor Cloud Function execution time in Console
 
-## Production Considerations
+## Production considerations
 
 After testing completes:
 
@@ -325,7 +327,7 @@ After testing completes:
    - Can switch traffic if issues arise
    - Test rollback procedure beforehand
 
-## Support & Troubleshooting
+## Support and troubleshooting
 
 Common issues and solutions:
 

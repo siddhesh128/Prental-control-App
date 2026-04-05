@@ -1,14 +1,14 @@
-# QR Code-Based Device Pairing System
+# QR Pairing Implementation
 
-## Overview
+This doc explains how QR pairing works in the app and how the frontend talks to Firebase.
 
-The Parental Control app now features a secure QR code-based device pairing system that allows parents to pair child devices without manual setup. This is much more secure and user-friendly than the previous manual approach.
+For the full system view, see [APP_ARCHITECTURE.md](APP_ARCHITECTURE.md).
 
-## Architecture
+## Main pieces
 
-### Components
+### Pairing service
 
-#### 1. **Pairing Service** (`app/services/pairing.service.ts`)
+#### 1. `app/services/pairing.service.ts`
 
 Core service for QR code generation, validation, and token management.
 
@@ -32,7 +32,7 @@ Core service for QR code generation, validation, and token management.
 }
 ```
 
-#### 2. **QR Code Display Component** (`app/_components/QRCodeDisplay.tsx`)
+#### 2. `app/_components/QRCodeDisplay.tsx`
 
 Displays the generated QR code for scanning.
 
@@ -43,7 +43,7 @@ Displays the generated QR code for scanning.
 - `title?: string` - Display title
 - `description?: string` - Display description
 
-#### 3. **QR Scanner Component** (`app/_components/QRScanner.tsx`)
+#### 3. `app/_components/QRScanner.tsx`
 
 Provides camera-based QR code scanning interface.
 
@@ -64,7 +64,7 @@ Provides camera-based QR code scanning interface.
 
 ### Screens
 
-#### 1. **Parent Add Device Screen** (`app/(parent)/add-device/index.tsx`)
+#### 1. `app/(parent)/add-device/index.tsx`
 
 **Flow:**
 
@@ -91,7 +91,7 @@ Provides camera-based QR code scanning interface.
 - Regenerate & Info buttons
 - Security info box
 
-#### 2. **Child Pair with Parent Screen** (`app/(child)/pair-with-parent.tsx`)
+#### 2. `app/(child)/pair-with-parent.tsx`
 
 **Flow:**
 
@@ -119,7 +119,7 @@ Provides camera-based QR code scanning interface.
 - Instructions box
 - Info box with security details
 
-### Security Features
+## Security notes
 
 #### 1. **Time-Limited Tokens**
 
@@ -145,7 +145,7 @@ Provides camera-based QR code scanning interface.
 - No sensitive information exposed
 - Fast expiration reduces exposure window
 
-## Implementation Details
+## Implementation details
 
 ### Dependencies
 
@@ -157,7 +157,7 @@ Provides camera-based QR code scanning interface.
 }
 ```
 
-### Database Considerations (Backend)
+### Database model
 
 When implementing the backend pairing confirmation:
 
@@ -177,7 +177,7 @@ interface DevicePairing {
 
 ## Usage
 
-### For Parents
+### Parent flow
 
 1. Open app → Navigate to Devices
 2. Tap "+ Add Device" button
@@ -186,7 +186,7 @@ interface DevicePairing {
 5. Code valid for 5 minutes
 6. Can regenerate if needed
 
-### For Children
+### Child flow
 
 1. Open app → Go to child section
 2. Tap "Pair with Parent"
@@ -196,7 +196,7 @@ interface DevicePairing {
 6. Tap "Confirm Pairing"
 7. Wait for parent to approve (if needed)
 
-## API Endpoints (To Implement)
+## API endpoints
 
 ### 1. Generate Pairing Session
 
@@ -229,22 +229,22 @@ DELETE /api/pairing/{pairingId}
 Response: { success }
 ```
 
-## Error Handling
+## Error handling
 
-### QR Scanning Errors
+### QR scanning errors
 
 - **Invalid QR** - "The QR code is not valid"
 - **Expired Token** - "The QR code has expired"
 - **Camera Permission** - "Camera permission denied"
 - **Invalid JSON** - "Scanned code could not be parsed"
 
-### Pairing Errors
+### Pairing errors
 
 - **User Not Found** - "Parent user not found"
 - **Device Not Found** - "Device information missing"
 - **Network Error** - "Failed to confirm pairing"
 
-## Future Enhancements
+## Future work
 
 1. **Bulk Pairing** - Add multiple children at once
 2. **Pairing History** - Track all past pairings
@@ -257,7 +257,7 @@ Response: { success }
 9. **Device Recovery** - Regain access if device lost
 10. **Pairing Analytics** - Track pairing success rates
 
-## Files Changed/Created
+## Files changed
 
 ### New Files
 
@@ -277,7 +277,7 @@ Response: { success }
 - `expo-camera@~14.0`
 - `expo-barcode-scanner`
 
-## Testing Checklist
+## Testing checklist
 
 - [ ] QR code generates correctly
 - [ ] QR code displays with proper size

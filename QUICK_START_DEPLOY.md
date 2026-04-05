@@ -1,4 +1,6 @@
-# Quick Start: Deploy Parental Control Backend
+# Quick Start: Firebase Deployment
+
+This is the short developer runbook for installing, testing, and deploying the Firebase backend.
 
 ## Pre-Deployment Checklist
 
@@ -19,7 +21,7 @@ npm install
 cd ..
 ```
 
-**Expected output**: "... vulnerabilities" message is OK
+**Expected output**: a normal npm install output. Vulnerability warnings are not blocking for local setup.
 
 ## 2. Local Testing with Emulator (10 min)
 
@@ -69,7 +71,7 @@ cd ..
 firebase deploy --only functions
 ```
 
-**Expected time**: 2-5 minutes per function (7 functions total)
+**Expected time**: 2-5 minutes per function.
 
 ### Step 3: Verify Deployment
 
@@ -106,7 +108,7 @@ Open `app/config/firebase.ts` and ensure:
 
 ### Test with Real Devices
 
-1. Build APK/IPA for both rolesBuild APK/IPA:
+1. Build APK/IPA for both roles:
 
    ```bash
    eas build --platform android
@@ -163,7 +165,7 @@ firebase functions:delete confirmDevicePairing
 firebase deploy --only functions:confirmDevicePairing
 ```
 
-## Success Criteria
+## Success criteria
 
 ✅ All 7 Cloud Functions deployed without errors  
 ✅ Firestore collections created automatically on first pairing  
@@ -180,7 +182,7 @@ firebase deploy --only functions:confirmDevicePairing
 - Pairing confirmation: <1s
 - Total flow end-to-end: <5s
 
-## Production Best Practices
+## Production best practices
 
 1. **Monitor Daily**
    - Check error rates in Firebase Console
@@ -202,7 +204,7 @@ firebase deploy --only functions:confirmDevicePairing
    - Document any custom changes
    - Create runbook for common issues
 
-## Need Help?
+## Need help?
 
 1. Check logs: `firebase functions:log`
 2. Read BACKEND_SETUP.md (comprehensive guide)
