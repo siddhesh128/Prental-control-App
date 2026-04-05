@@ -2,10 +2,25 @@ import { Stack } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../store';
 import { Redirect } from 'expo-router';
+import { useEffect } from 'react';
+import childBackgroundMonitorService from '../services/child-background-monitor.service';
 
 export default function ChildLayout() {
   const user = useSelector((state: RootState) => state.auth.user);
   const isChild = useSelector((state: RootState) => state.device.isChild);
+
+  useEffect(() => {
+    const uid = user?.uid;
+    if (uid && isChild) {
+      childBackgroundMonitorService.start(uid);
+      return () => {
+        childBackgroundMonitorService.stop();
+      };
+    }
+
+    childBackgroundMonitorService.stop();
+    return undefined;
+  }, [isChild, user?.uid]);
 
   // Protect child routes
   if (!user || !isChild) {

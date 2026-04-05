@@ -16,17 +16,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { getAuth } from 'firebase/auth';
 import PairingService from '../services/pairing.service';
 import { useFocusEffect } from '@react-navigation/native';
-import * as Battery from 'expo-battery';
-import * as Location from 'expo-location';
-import * as FileSystem from 'expo-file-system/legacy';
-import { db } from '../config/firebase';
-import { push, ref, runTransaction, set, update } from 'firebase/database';
 
 export default function ChildDashboardScreen() {
   const [isChecking, setIsChecking] = useState(true);
   const [isPaired, setIsPaired] = useState(false);
   const [hasUsageAccess, setHasUsageAccess] = useState(Platform.OS !== 'android');
-  const lastScreenTimeSyncRef = React.useRef<number | null>(null);
   const promptedUsageAccessRef = React.useRef(false);
 
   const openUsageSettings = React.useCallback(async () => {
@@ -71,40 +65,25 @@ export default function ChildDashboardScreen() {
     );
   }, []);
 
-  const syncAndroidSystemUsage = React.useCallback(async (uid: string) => {
+  const checkUsageAccess = React.useCallback(async () => {
     if (Platform.OS !== 'android') {
+      setHasUsageAccess(true);
       return;
     }
 
     const usageModule = (NativeModules as any).UsageStatsModule;
-    if (!usageModule?.getDailyUsageStats) {
+    if (!usageModule) {
+      setHasUsageAccess(false);
       return;
     }
 
-    let accessGranted = false;
-    if (usageModule?.isUsageAccessGranted) {
-      try {
-        accessGranted = !!(await usageModule.isUsageAccessGranted());
-      } catch {
-        accessGranted = false;
-      }
-    }
-
-    let usageStats: Record<string, any> = {};
     try {
-      const rawUsage = await usageModule.getDailyUsageStats();
-      if (rawUsage && typeof rawUsage === 'object') {
-        usageStats = rawUsage as Record<string, any>;
-      }
-    } catch (usageError) {
-      console.warn('Failed to fetch daily usage stats:', usageError);
-    }
+      const hasAccess = usageModule.isUsageAccessGranted
+        ? !!(await usageModule.isUsageAccessGranted())
+        : false;
+      setHasUsageAccess(hasAccess);
 
-    const hasUsageData = Object.keys(usageStats).length > 0;
-    setHasUsageAccess(accessGranted || hasUsageData);
-
-    if (!accessGranted && !hasUsageData) {
-      if (!promptedUsageAccessRef.current) {
+      if (!hasAccess && !promptedUsageAccessRef.current) {
         promptedUsageAccessRef.current = true;
         Alert.alert(
           'Enable Usage Access',
@@ -122,47 +101,9 @@ export default function ChildDashboardScreen() {
           ]
         );
       }
+    } catch {
+      setHasUsageAccess(false);
     }
-
-    // Persist even empty objects so stale screen-time entries don't stick forever.
-    await set(ref(db, `screenTime/${uid}`), usageStats);
-
-    const usageValues = Object.values(usageStats) as Array<{
-      duration?: number;
-      lastUsed?: number;
-    }>;
-    const totalFromUsageMap = usageValues.reduce(
-      (acc, item) => acc + Number(item?.duration || 0),
-      0
-    );
-    const latestUsageTimestamp = usageValues.reduce(
-      (latest, item) => Math.max(latest, Number(item?.lastUsed || 0)),
-      0
-    );
-
-    let appsUsedToday = Object.keys(usageStats).length;
-    let totalScreenTimeMs = totalFromUsageMap;
-
-    if (usageModule?.getDailyUsageSummary) {
-      try {
-        const summary = await usageModule.getDailyUsageSummary();
-        if (summary && typeof summary === 'object') {
-          appsUsedToday = Number(summary.appsUsedToday || appsUsedToday);
-          totalScreenTimeMs = Number(summary.totalScreenTimeMs || totalScreenTimeMs);
-        }
-      } catch (summaryError) {
-        console.warn('Failed to fetch usage summary:', summaryError);
-      }
-    }
-
-    await update(ref(db, `devices/${uid}`), {
-      screenTimeToday: totalScreenTimeMs,
-      appsUsedToday,
-      usageLastUpdated: Date.now(),
-      screenTimeMapLastUsed: latestUsageTimestamp,
-    });
-
-    return accessGranted || hasUsageData;
   }, []);
 
   const checkPairing = React.useCallback(async () => {
@@ -181,96 +122,12 @@ export default function ChildDashboardScreen() {
     }
   }, []);
 
-  const syncRealtimeMetrics = React.useCallback(async () => {
-    try {
-      const uid = getAuth().currentUser?.uid;
-      if (!uid) {
-        return;
-      }
-
-      const batteryLevel = await Battery.getBatteryLevelAsync();
-      let storageUsed = 0;
-      try {
-        const usageModule = (NativeModules as any).UsageStatsModule;
-        if (Platform.OS === 'android' && usageModule?.getStorageStats) {
-          const storageStats = await usageModule.getStorageStats();
-          storageUsed = Number(storageStats?.usedBytes || 0);
-        } else {
-          const dirInfo = await FileSystem.getInfoAsync(FileSystem.documentDirectory || '');
-          storageUsed =
-            'size' in dirInfo && typeof dirInfo.size === 'number' ? Number(dirInfo.size) : 0;
-        }
-      } catch (storageError) {
-        console.warn('Failed to read storage stats, continuing with fallback:', storageError);
-      }
-
-      const now = Date.now();
-      const lastSyncAt = lastScreenTimeSyncRef.current;
-      const elapsedMs = lastSyncAt ? Math.max(0, now - lastSyncAt) : 0;
-      lastScreenTimeSyncRef.current = now;
-
-      await update(ref(db, `devices/${uid}`), {
-        batteryLevel,
-        storageUsed,
-        isOnline: true,
-        lastUpdated: Date.now(),
-      });
-
-      const syncedSystemUsage = await syncAndroidSystemUsage(uid);
-
-      // Non-Android fallback tracking when system-wide stats API is unavailable.
-      if (Platform.OS !== 'android' || !syncedSystemUsage) {
-        if (Platform.OS !== 'android') {
-          await runTransaction(ref(db, `screenTime/${uid}/Parental Control App`), (current) => {
-            const existingDuration = Number(current?.duration || 0);
-            return {
-              duration: existingDuration + elapsedMs,
-              lastUsed: now,
-            };
-          });
-        }
-      }
-
-      const permission = await Location.getForegroundPermissionsAsync();
-      const hasPermission =
-        permission.status === 'granted' ||
-        (await Location.requestForegroundPermissionsAsync()).status === 'granted';
-
-      if (hasPermission) {
-        const currentLocation = await Location.getCurrentPositionAsync({});
-        await push(ref(db, `locations/${uid}`), {
-          latitude: currentLocation.coords.latitude,
-          longitude: currentLocation.coords.longitude,
-          timestamp: Date.now(),
-        });
-      }
-    } catch (error) {
-      console.error('Failed to sync child realtime metrics:', error);
-    }
-  }, [syncAndroidSystemUsage]);
-
   useFocusEffect(
     React.useCallback(() => {
       checkPairing();
-
-      let interval: ReturnType<typeof setInterval> | null = null;
-      const startSync = async () => {
-        await syncRealtimeMetrics();
-        interval = setInterval(syncRealtimeMetrics, 15000);
-      };
-
-      startSync();
-
-      return () => {
-        if (Platform.OS === 'android') {
-          setHasUsageAccess(false);
-        }
-        lastScreenTimeSyncRef.current = null;
-        if (interval) {
-          clearInterval(interval);
-        }
-      };
-    }, [checkPairing, syncRealtimeMetrics])
+      checkUsageAccess();
+      return undefined;
+    }, [checkPairing, checkUsageAccess])
   );
 
   const handlePairWithParent = () => {

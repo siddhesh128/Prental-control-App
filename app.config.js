@@ -19,7 +19,12 @@ module.exports = {
     android: {
       package: 'com.parentalcontrol.app',
       googleServicesFile: './android/app/google-services.json',
-      permissions: ['INTERNET'],
+      permissions: [
+        'INTERNET',
+        'ACCESS_COARSE_LOCATION',
+        'ACCESS_FINE_LOCATION',
+        'ACCESS_BACKGROUND_LOCATION',
+      ],
     },
     plugins: [
       'expo-router',
