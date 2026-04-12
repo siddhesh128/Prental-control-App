@@ -7,6 +7,46 @@ import ThemedView from '@/_components/ThemedView';
 
 const features = [
   {
+    id: 'family-setup',
+    title: 'Family Setup',
+    icon: 'people-outline',
+    color: '#11A7B8',
+    route: 'family-setup',
+    description: 'Add guardians and manage household roles',
+  },
+  {
+    id: 'homework-review',
+    title: 'Homework Review',
+    icon: 'school-outline',
+    color: '#0DA67A',
+    route: 'homework-review',
+    description: 'Review AI homework checks and approve points',
+  },
+  {
+    id: 'rewards-setup',
+    title: 'Rewards Setup',
+    icon: 'gift-outline',
+    color: '#E67912',
+    route: 'rewards-setup',
+    description: 'Create privileges and point thresholds',
+  },
+  {
+    id: 'exercise-settings',
+    title: 'Exercise Settings',
+    icon: 'fitness-outline',
+    color: '#D04D8A',
+    route: 'exercise-settings',
+    description: 'Tune rep bonuses and screen-time caps',
+  },
+  {
+    id: 'wellness-dashboard',
+    title: 'Wellness Dashboard',
+    icon: 'pulse-outline',
+    color: '#0E9C87',
+    route: 'wellness-dashboard',
+    description: 'Track posture, breaks, and sedentary time',
+  },
+  {
     id: 'location',
     title: 'Location Tracking',
     icon: 'location-outline',

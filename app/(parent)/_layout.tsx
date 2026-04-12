@@ -35,6 +35,36 @@ export default function ParentLayout() {
         }}
       />
       <Stack.Screen
+        name="family-setup"
+        options={{
+          title: 'Family Setup',
+        }}
+      />
+      <Stack.Screen
+        name="homework-review"
+        options={{
+          title: 'Homework Review',
+        }}
+      />
+      <Stack.Screen
+        name="rewards-setup"
+        options={{
+          title: 'Rewards Setup',
+        }}
+      />
+      <Stack.Screen
+        name="exercise-settings"
+        options={{
+          title: 'Exercise Settings',
+        }}
+      />
+      <Stack.Screen
+        name="wellness-dashboard"
+        options={{
+          title: 'Wellness Dashboard',
+        }}
+      />
+      <Stack.Screen
         name="location/index"
         options={{
           title: 'Location Tracking',

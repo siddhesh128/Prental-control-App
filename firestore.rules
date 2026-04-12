@@ -6,6 +6,95 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Helper to check if user is member of family
+    function isFamilyMember(familyId) {
+      return exists(/databases/$(database)/documents/families/$(familyId)/members/$(request.auth.uid));
+    }
+
+    // Helper to check user role in family
+    function getFamilyRole(familyId) {
+      return get(/databases/$(database)/documents/families/$(familyId)/members/$(request.auth.uid)).data.role;
+    }
+
+    // Helper to check if user is guardian (primary or co-guardian)
+    function isGuardian(familyId) {
+      let role = getFamilyRole(familyId);
+      return role == 'PRIMARY_GUARDIAN' || role == 'CO_GUARDIAN';
+    }
+
+    // Helper to check if user is parent/guardian/caregiver
+    function isSupervisor(familyId) {
+      let role = getFamilyRole(familyId);
+      return role in ['PRIMARY_GUARDIAN', 'CO_GUARDIAN', 'CAREGIVER'];
+    }
+
+    // ====================================================================
+    // FAMILIES COLLECTION - Family Hierarchy and Structure
+    // ====================================================================
+    match /families/{familyId} {
+      // Family members can read family metadata
+      allow read: if isFamilyMember(familyId);
+      // Only Cloud Functions can create/update families
+      allow write: if false;
+
+      // Members subcollection - Family members
+      match /members/{memberId} {
+        allow read: if isFamilyMember(familyId);
+        allow write: if false; // Cloud Functions only
+
+        // Member permissions
+        allow read: if request.auth.uid == memberId;
+      }
+
+      // Homework subcollection - Homework sessions
+      match /homework/{sessionId} {
+        // Guardians can read all homework
+        allow read: if isGuardian(familyId);
+        // Child can read their own homework
+        allow read: if request.auth.uid == resource.data.childId;
+        // All family members can submit homework
+        allow create, update: if request.auth.uid != null;
+      }
+
+      // Exercises subcollection - Exercise sessions
+      match /exercises/{sessionId} {
+        allow read: if isFamilyMember(familyId);
+        allow create, update: if request.auth.uid != null;
+      }
+
+      // Tasks subcollection - Task management
+      match /tasks/{taskId} {
+        allow read: if isFamilyMember(familyId);
+        // Guardians can create tasks
+        allow create: if isGuardian(familyId);
+        // Child can update (submit) their own tasks
+        allow update: if request.auth.uid == resource.data.childId || isGuardian(familyId);
+      }
+
+      // Rewards subcollection - Reward wallets and rules
+      match /rewards/{childId} {
+        // Child can read their own rewards
+        allow read: if request.auth.uid == childId;
+        // Guardians can read all rewards
+        allow read: if isGuardian(familyId);
+        // Cloud Functions only write
+        allow write: if false;
+      }
+
+      // Reward rules subcollection
+      match /rewardRules/{ruleId} {
+        allow read: if isFamilyMember(familyId);
+        // Only guardians can create/update rules
+        allow create, update: if isGuardian(familyId);
+      }
+
+      // Wellness subcollection - Posture and activity data
+      match /wellness/{childId} {
+        allow read: if request.auth.uid == childId || isGuardian(familyId);
+        allow write: if false; // Cloud Functions only
+      }
+    }
+
     // ====================================================================
     // USERS COLLECTION - Each user can only access their own data
     // ====================================================================

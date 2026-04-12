@@ -38,15 +38,7 @@ const auth = admin.auth();
  *   confirmedAt: number
  * }
  */
-export const confirmDevicePairing = functions.https.onCall<
-  {
-    childId: string;
-    parentId: string;
-    token: string;
-    childDeviceName: string;
-  },
-  any
->(
+export const confirmDevicePairing = functions.https.onCall(
   async (
     data: {
       childId: string;
@@ -216,10 +208,7 @@ export const confirmDevicePairing = functions.https.onCall<
  *   message: string
  * }
  */
-export const validatePairingToken = functions.https.onCall<
-  { token: string; parentId: string },
-  any
->(async (data: { token: string; parentId: string }, context: functions.https.CallableContext) => {
+export const validatePairingToken = functions.https.onCall(async (data: { token: string; parentId: string }, context: functions.https.CallableContext) => {
   try {
     const { token, parentId } = data;
 
@@ -294,10 +283,7 @@ export const validatePairingToken = functions.https.onCall<
  *   qrData: string (JSON encoded pairing data)
  * }
  */
-export const generatePairingCode = functions.https.onCall<
-  { parentId: string; parentDeviceId: string },
-  any
->(
+export const generatePairingCode = functions.https.onCall(
   async (
     data: { parentId: string; parentDeviceId: string },
     context: functions.https.CallableContext
@@ -419,7 +405,7 @@ class PairingService {
  * Cloud Function: Log device activity
  * Called by child device to log activities (app launches, website visits, etc)
  */
-export const logDeviceActivity = functions.https.onCall<{ childId: string; activity: any }, any>(
+export const logDeviceActivity = functions.https.onCall(
   async (data: { childId: string; activity: any }, context: functions.https.CallableContext) => {
     try {
       if (!context.auth) {
@@ -508,3 +494,363 @@ export const onPairingDeleted = functions.firestore
       return null;
     }
   });
+
+// ============================================================================
+// FAMILY HIERARCHY FUNCTIONS
+// ============================================================================
+
+/**
+ * Cloud Function: Add Family Member
+ * Called by primary guardian to add co-guardian or caregiver to family
+ */
+export const addFamilyMember = functions.https.onCall(
+  async (
+    data: {
+      familyId: string;
+      memberEmail: string;
+      role: string;
+      displayName: string;
+    },
+    context: functions.https.CallableContext
+  ) => {
+    try {
+      if (!context.auth) {
+        throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+      }
+
+      const { familyId, memberEmail, role, displayName } = data;
+
+      // Validate input
+      if (!familyId || !memberEmail || !role) {
+        throw new functions.https.HttpsError('invalid-argument', 'Missing required fields');
+      }
+
+      // Check if caller is primary guardian
+      const familyRef = db.collection('families').doc(familyId);
+      const familyDoc = await familyRef.get();
+
+      if (!familyDoc.exists) {
+        throw new functions.https.HttpsError('not-found', 'Family not found');
+      }
+
+      if (familyDoc.data()?.primaryGuardianId !== context.auth.uid) {
+        throw new functions.https.HttpsError(
+          'permission-denied',
+          'Only primary guardian can add members'
+        );
+      }
+
+      // Create or get user by email
+      let newUser = null;
+      try {
+        newUser = await auth.getUserByEmail(memberEmail);
+      } catch (error) {
+        // Create new user if doesn't exist
+        newUser = await auth.createUser({
+          email: memberEmail,
+          emailVerified: false,
+        });
+      }
+
+      // Add member to family
+      const membersRef = familyRef.collection('members');
+      await membersRef.doc(newUser.uid).set({
+        userId: newUser.uid,
+        role,
+        displayName,
+        email: memberEmail,
+        addedAt: admin.firestore.Timestamp.now(),
+      });
+
+      return {
+        success: true,
+        memberId: newUser.uid,
+        message: 'Family member added successfully',
+      };
+    } catch (error: any) {
+      console.error('Error in addFamilyMember:', error);
+      throw new functions.https.HttpsError('internal', error.message);
+    }
+  }
+);
+
+/**
+ * Cloud Function: Update Family Member Role
+ */
+export const updateFamilyMemberRole = functions.https.onCall(
+  async (
+    data: { familyId: string; memberId: string; newRole: string },
+    context: functions.https.CallableContext
+  ) => {
+    try {
+      if (!context.auth) {
+        throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+      }
+
+      const { familyId, memberId, newRole } = data;
+
+      // Check if caller is primary guardian
+      const familyRef = db.collection('families').doc(familyId);
+      const familyDoc = await familyRef.get();
+
+      if (familyDoc.data()?.primaryGuardianId !== context.auth.uid) {
+        throw new functions.https.HttpsError(
+          'permission-denied',
+          'Only primary guardian can update roles'
+        );
+      }
+
+      // Update member role
+      const memberRef = familyRef.collection('members').doc(memberId);
+      await memberRef.update({
+        role: newRole,
+        updatedAt: admin.firestore.Timestamp.now(),
+      });
+
+      return { success: true, message: 'Role updated successfully' };
+    } catch (error: any) {
+      console.error('Error in updateFamilyMemberRole:', error);
+      throw new functions.https.HttpsError('internal', error.message);
+    }
+  }
+);
+
+// ============================================================================
+// HOMEWORK ANALYSIS FUNCTIONS
+// ============================================================================
+
+/**
+ * Cloud Function: Analyze Homework
+ * Called by child app after uploading before/after homework images
+ */
+export const analyzeHomework = functions.https.onCall(
+  async (
+    data: {
+      sessionId: string;
+      familyId: string;
+      childId: string;
+      preImageUrl: string;
+      postImageUrl: string;
+    },
+    context: functions.https.CallableContext
+  ) => {
+    try {
+      if (!context.auth) {
+        throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+      }
+
+      const { sessionId, familyId, childId, preImageUrl, postImageUrl } = data;
+
+      // TODO: Call Gemini Vision API to analyze homework
+      // For now, return a mock analysis
+      const analysis = {
+        analysisId: `analysis_${Date.now()}`,
+        sessionId,
+        confidence: 85,
+        completion: 'COMPLETE',
+        writingDensityDifference: 65,
+        message: 'Analysis would call Gemini Vision API here',
+      };
+
+      // Store analysis in Firestore
+      const sessionRef = db
+        .collection('families')
+        .doc(familyId)
+        .collection('homework')
+        .doc(sessionId);
+      await sessionRef.update({
+        status: 'REVIEW_PENDING',
+        analysis,
+        analyzedAt: admin.firestore.Timestamp.now(),
+      });
+
+      return { success: true, analysis };
+    } catch (error: any) {
+      console.error('Error in analyzeHomework:', error);
+      throw new functions.https.HttpsError('internal', error.message);
+    }
+  }
+);
+
+/**
+ * Cloud Function: Review Homework
+ * Called by parent guardian to approve/reject homework
+ */
+export const reviewHomework = functions.https.onCall(
+  async (
+    data: {
+      sessionId: string;
+      familyId: string;
+      decision: string;
+      pointsAwarded?: number;
+    },
+    context: functions.https.CallableContext
+  ) => {
+    try {
+      if (!context.auth) {
+        throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+      }
+
+      const { sessionId, familyId, decision, pointsAwarded } = data;
+
+      // Update homework session
+      const sessionRef = db
+        .collection('families')
+        .doc(familyId)
+        .collection('homework')
+        .doc(sessionId);
+      await sessionRef.update({
+        status: decision === 'APPROVED' ? 'APPROVED' : 'REJECTED',
+        parentReview: {
+          decision,
+          reviewedBy: context.auth.uid,
+          reviewedAt: admin.firestore.Timestamp.now(),
+          pointsAwarded: pointsAwarded || 0,
+        },
+      });
+
+      return { success: true, message: 'Homework reviewed' };
+    } catch (error: any) {
+      console.error('Error in reviewHomework:', error);
+      throw new functions.https.HttpsError('internal', error.message);
+    }
+  }
+);
+
+// ============================================================================
+// EXERCISE VERIFICATION FUNCTIONS
+// ============================================================================
+
+/**
+ * Cloud Function: Verify Exercise Session
+ * Called by child app after completing exercise routine
+ */
+export const verifyExerciseSession = functions.https.onCall(
+  async (
+    data: {
+      sessionId: string;
+      familyId: string;
+      childId: string;
+      exerciseType: string;
+      repsPerformed: number;
+    },
+    context: functions.https.CallableContext
+  ) => {
+    try {
+      if (!context.auth) {
+        throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+      }
+
+      const { sessionId, familyId, childId, exerciseType, repsPerformed } = data;
+
+      // Calculate bonus minutes (1 minute per rep, capped at daily max)
+      const bonusMinutes = Math.min(repsPerformed, 30); // 30 min daily cap
+
+      // Update exercise session
+      const sessionRef = db
+        .collection('families')
+        .doc(familyId)
+        .collection('exercises')
+        .doc(sessionId);
+      await sessionRef.update({
+        status: 'COMPLETED',
+        verified: true,
+        bonusMinutesEarned: bonusMinutes,
+        verifiedAt: admin.firestore.Timestamp.now(),
+      });
+
+      // Award bonus minutes to child's screen time
+      const rewardRef = db.collection('families').doc(familyId).collection('rewards').doc(childId);
+      await rewardRef.update({
+        bonusMinutesAvailable: admin.firestore.FieldValue.increment(bonusMinutes),
+      });
+
+      return {
+        success: true,
+        bonusMinutesAwarded: bonusMinutes,
+        message: `Verified ${repsPerformed} reps - ${bonusMinutes} bonus minutes awarded`,
+      };
+    } catch (error: any) {
+      console.error('Error in verifyExerciseSession:', error);
+      throw new functions.https.HttpsError('internal', error.message);
+    }
+  }
+);
+
+// ============================================================================
+// TASK COMPLETION FUNCTIONS
+// ============================================================================
+
+/**
+ * Cloud Function: Complete Task
+ * Called by child app to mark a task as done
+ */
+export const completeTask = functions.https.onCall(
+  async (
+    data: { taskId: string; familyId: string; childId: string; pointsValue: number },
+    context: functions.https.CallableContext
+  ) => {
+    try {
+      if (!context.auth) {
+        throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+      }
+
+      const { taskId, familyId, childId, pointsValue } = data;
+
+      // Update task status
+      const taskRef = db.collection('families').doc(familyId).collection('tasks').doc(taskId);
+      await taskRef.update({
+        status: 'SUBMITTED',
+        submittedAt: admin.firestore.Timestamp.now(),
+      });
+
+      // Award points to child
+      const walletRef = db.collection('families').doc(familyId).collection('rewards').doc(childId);
+      await walletRef.update({
+        totalPoints: admin.firestore.FieldValue.increment(pointsValue),
+        lastUpdated: admin.firestore.Timestamp.now(),
+      });
+
+      return {
+        success: true,
+        pointsAwarded: pointsValue,
+        message: 'Task submitted for review',
+      };
+    } catch (error: any) {
+      console.error('Error in completeTask:', error);
+      throw new functions.https.HttpsError('internal', error.message);
+    }
+  }
+);
+
+/**
+ * Cloud Function: Approve Task
+ * Called by parent to approve completed task
+ */
+export const approveTask = functions.https.onCall(
+  async (
+    data: { taskId: string; familyId: string; childId: string },
+    context: functions.https.CallableContext
+  ) => {
+    try {
+      if (!context.auth) {
+        throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+      }
+
+      const { taskId, familyId, childId } = data;
+
+      // Update task status
+      const taskRef = db.collection('families').doc(familyId).collection('tasks').doc(taskId);
+      await taskRef.update({
+        status: 'APPROVED',
+        approvedAt: admin.firestore.Timestamp.now(),
+        approvedBy: context.auth.uid,
+      });
+
+      return { success: true, message: 'Task approved' };
+    } catch (error: any) {
+      console.error('Error in approveTask:', error);
+      throw new functions.https.HttpsError('internal', error.message);
+    }
+  }
+);

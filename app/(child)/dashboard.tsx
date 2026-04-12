@@ -134,6 +134,26 @@ export default function ChildDashboardScreen() {
     router.push('/(child)/pair-with-parent');
   };
 
+  const handleOpenTasks = () => {
+    router.push('/(child)/tasks');
+  };
+
+  const handleOpenRewards = () => {
+    router.push('/(child)/rewards');
+  };
+
+  const handleOpenHomework = () => {
+    router.push('/(child)/homework');
+  };
+
+  const handleOpenExercise = () => {
+    router.push('/(child)/exercise');
+  };
+
+  const handleOpenWellness = () => {
+    router.push('/(child)/wellness');
+  };
+
   if (isChecking) {
     return (
       <View style={styles.loadingContainer}>
@@ -160,6 +180,52 @@ export default function ChildDashboardScreen() {
         </View>
 
         <View style={styles.quickGrid}>
+          <TouchableOpacity
+            style={styles.quickCard}
+            onPress={handleOpenWellness}
+            activeOpacity={0.88}
+          >
+            <Ionicons name="pulse-outline" size={22} color="#0E9C87" />
+            <Text style={styles.quickTitle}>Wellness</Text>
+            <Text style={styles.quickDesc}>See posture alerts and break reminders</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.quickCard}
+            onPress={handleOpenExercise}
+            activeOpacity={0.88}
+          >
+            <Ionicons name="fitness-outline" size={22} color="#D04D8A" />
+            <Text style={styles.quickTitle}>Exercise</Text>
+            <Text style={styles.quickDesc}>Earn screen time with verified reps</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.quickCard}
+            onPress={handleOpenHomework}
+            activeOpacity={0.88}
+          >
+            <Ionicons name="school-outline" size={22} color="#0DA67A" />
+            <Text style={styles.quickTitle}>Homework</Text>
+            <Text style={styles.quickDesc}>Capture before and after work</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.quickCard} onPress={handleOpenTasks} activeOpacity={0.88}>
+            <Ionicons name="checkbox-outline" size={22} color="#0B4A9A" />
+            <Text style={styles.quickTitle}>Tasks</Text>
+            <Text style={styles.quickDesc}>Submit chores and homework for review</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.quickCard}
+            onPress={handleOpenRewards}
+            activeOpacity={0.88}
+          >
+            <Ionicons name="trophy-outline" size={22} color="#D97706" />
+            <Text style={styles.quickTitle}>Rewards</Text>
+            <Text style={styles.quickDesc}>View points and unlock privileges</Text>
+          </TouchableOpacity>
+
           <View style={styles.quickCard}>
             <Ionicons name="time-outline" size={22} color="#3F6EF3" />
             <Text style={styles.quickTitle}>Screen Time</Text>

@@ -47,6 +47,36 @@ export default function ChildLayout() {
         }}
       />
       <Stack.Screen
+        name="rewards"
+        options={{
+          title: 'Rewards Wallet',
+        }}
+      />
+      <Stack.Screen
+        name="homework"
+        options={{
+          title: 'Homework Check-in',
+        }}
+      />
+      <Stack.Screen
+        name="exercise"
+        options={{
+          title: 'Exercise Bonus',
+        }}
+      />
+      <Stack.Screen
+        name="wellness"
+        options={{
+          title: 'Wellness Alerts',
+        }}
+      />
+      <Stack.Screen
+        name="tasks"
+        options={{
+          title: 'My Tasks',
+        }}
+      />
+      <Stack.Screen
         name="pair-with-parent"
         options={{
           title: 'Pair with Parent',

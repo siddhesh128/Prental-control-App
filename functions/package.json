@@ -1,7 +1,7 @@
 {
   "name": "parental-control-functions",
   "description": "Cloud Functions for Parental Control",
-  "type": "module",
+  "main": "lib/index.js",
   "engines": {
     "node": "20"
   },
